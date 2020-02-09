@@ -1,0 +1,9 @@
+@(ingredient:Ingredient, embedded:Boolean = Boolean.FALSE)
+@if(!embedded){
+<?xml version="1.0" encoding="UTF-8" ?>
+}
+<ingredient>
+    <name>@ingredient.getName()</name>
+    <category>@ingredient.getCategory()</category>
+    <properties>@ingredient.getProperties()</properties>
+</ingredient>

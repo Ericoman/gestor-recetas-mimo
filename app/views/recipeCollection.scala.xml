@@ -1,0 +1,7 @@
+@(recipeCollection:List[Recipe])
+<?xml version="1.0" encoding="UTF-8" ?>
+<recipes>
+    @for(r <- recipeCollection){
+        @recipe(r, Boolean.TRUE)
+    }
+</recipes>

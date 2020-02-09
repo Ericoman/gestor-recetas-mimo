@@ -1,0 +1,15 @@
+@(nutrition:Nutrition, embedded:Boolean = Boolean.FALSE)
+@if(!embedded){
+<?xml version="1.0" encoding="UTF-8" ?>
+}
+<nutrition>
+    <portionSize>@nutrition.getPortionSize()</portionSize>
+    <calories>@nutrition.getCalories()</calories>
+    <totalFat>@nutrition.getTotalFat()</totalFat>
+    <saturatedFat>@nutrition.getSaturatedFat()</saturatedFat>
+    <cholesterol>@nutrition.getCholesterol()</cholesterol>
+    <totalCarbohydrates>@nutrition.getTotalCarbohydrates()</totalCarbohydrates>
+    <fiber>@nutrition.getFiber()</fiber>
+    <sugar>@nutrition.getSugar()</sugar>
+    <protein>@nutrition.getProtein()</protein>
+</nutrition>

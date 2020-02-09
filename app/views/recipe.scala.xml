@@ -1,0 +1,16 @@
+@(recipe:Recipe, embedded:Boolean = Boolean.FALSE)
+@if(!embedded){
+<?xml version="1.0" encoding="UTF-8" ?>
+}
+<recipe>
+    <title>@recipe.getTitle()</title>
+    <categories>@recipe.getCategories()</categories>
+    <source>@recipe.getSource()</source>
+    <portions>@recipe.getPortions()</portions>
+    <time>@recipe.getTime()</time>
+    <calification>@recipe.getCalification()</calification>
+    <steps>@recipe.getSteps()</steps>
+    @if(recipe.getNutrition() != null){
+    <nutrition>@nutrition(recipe.getNutrition())</nutrition>
+    }
+</recipe>
