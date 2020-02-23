@@ -3,7 +3,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 }
 <ingredient>
+    <id>@ingredient.getId()</id>
     <name>@ingredient.getName()</name>
     <category>@ingredient.getCategory()</category>
     <properties>@ingredient.getProperties()</properties>
+    <recipes>@for(r <- ingredient.getRecipes()){
+            <id>@r.getId()</id>
+            <title>@r.getTitle</title>
+        }</recipes>
 </ingredient>

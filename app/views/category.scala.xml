@@ -1,0 +1,10 @@
+@(category:Category, embedded:Boolean = Boolean.FALSE)
+@if(!embedded){
+<?xml version="1.0" encoding="UTF-8" ?>
+}
+<step>
+    <id>@category.getId()</id>
+    <name>@category.getName()</name>
+    <double>@category.getPopularity()</double>
+    //ver como hacer las recipes
+</step>

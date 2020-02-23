@@ -15,9 +15,10 @@ GET     /recipes                 controllers.RecipeController.getRecipeCollectio
 POST    /recipes                 controllers.RecipeController.createRecipe(request:Request)
 
 #Recipe resource
-GET     /recipe/:id              controllers.RecipeController.getRecipe(request:Request,id: Integer)
-PUT     /recipe/:id              controllers.RecipeController.updateRecipe(request:Request,id: Integer)
-DELETE  /recipe/:id              controllers.RecipeController.deleteRecipe(request:Request,id: Integer)
+GET     /recipe/:id              controllers.RecipeController.getRecipe(request:Request,id: Long)
+PUT     /recipe/:id              controllers.RecipeController.updateRecipeTotally(request:Request,id: Long)
+PATCH     /recipe/:id              controllers.RecipeController.updateRecipe(request:Request,id: Long)
+DELETE  /recipe/:id              controllers.RecipeController.deleteRecipe(request:Request,id: Long)
 
 #Ingredients
 #Ingredients collection
@@ -25,16 +26,55 @@ GET     /ingredients             controllers.IngredientController.getIngredientC
 POST    /ingredients             controllers.IngredientController.createIngredient(request:Request)
 
 #Ingredient resource
-GET     /ingredient/:id          controllers.IngredientController.getIngredient(request:Request,id: Integer)
-PUT     /ingredient/:id          controllers.IngredientController.updateIngredient(request:Request,id: Integer)
-DELETE  /ingredient/:id          controllers.IngredientController.deleteIngredient(request:Request,id: Integer)
+GET     /ingredient/:id          controllers.IngredientController.getIngredient(request:Request,id: Long)
+PUT     /ingredient/:id          controllers.IngredientController.updateIngredientTotally(request:Request,id: Long)
+PATCH     /ingredient/:id          controllers.IngredientController.updateIngredient(request:Request,id: Long)
+DELETE  /ingredient/:id          controllers.IngredientController.deleteIngredient(request:Request,id: Long)
 
 #Nutrition
 #Nutritions collection
 GET     /nutritions              controllers.NutritionController.getNutritionCollection(request:Request)
-POST    /nutritions              controllers.NutritionController.createNutrition(request:Request)
+#POST    /nutritions              controllers.NutritionController.createNutrition(request:Request)
+POST    /recipe/:recipeId/nutrition             controllers.NutritionController.createNutritionInRecipe(request:Request,recipeId: Long)
+
 
 #Recipe resource
-GET     /nutrition/:id           controllers.NutritionController.getNutrition(request:Request,id: Integer)
-PUT     /nutrition/:id           controllers.NutritionController.updateNutrition(request:Request,id: Integer)
-DELETE  /nutrition/:id           controllers.NutritionController.deleteNutrition(request:Request,id: Integer)
+GET     /nutrition/:id           controllers.NutritionController.getNutrition(request:Request,id: Long)
+GET     /recipe/:recipeId/nutrition           controllers.NutritionController.getNutritionFromRecipe(request:Request,recipeId: Long)
+#PUT     /nutrition/:id           controllers.NutritionController.updateNutritionTotally(request:Request,id: Long)
+PUT     /recipe/:recipeId/nutrition           controllers.NutritionController.updateNutritionTotallyFromRecipe(request:Request,recipeId: Long)
+#PATCH     /nutrition/:id           controllers.NutritionController.updateNutrition(request:Request,id: Long)
+PATCH     /recipe/:recipeId/nutrition           controllers.NutritionController.updateNutritionFromRecipe(request:Request,recipeId: Long)
+DELETE  /nutrition/:id           controllers.NutritionController.deleteNutrition(request:Request,id: Long)
+DELETE  /recipe/:recipeId/nutrition           controllers.NutritionController.deleteNutritionFromRecipe(request:Request,recipeId: Long)
+
+
+#Steps
+#Steps collection
+GET     /steps             controllers.StepController.getStepCollection(request:Request)
+GET     /recipe/:recipeId/steps             controllers.StepController.getStepCollectionFromRecipe(request:Request,recipeId:Long)
+#POST    /steps             controllers.StepController.createStep(request:Request)
+POST    /recipe/:recipeId/steps             controllers.StepController.createStepInRecipe(request:Request,recipeId:Long)
+
+
+#Steps resource
+GET     /step/:id          controllers.StepController.getStep(request:Request,id: Long)
+GET     /recipe/:recipeId/step/:id          controllers.StepController.getStepFromRecipe(request:Request,id: Long, recipeId: Long)
+#PUT     /step/:id          controllers.StepController.updateStepTotally(request:Request,id: Long)
+PUT     /recipe/:recipeId/step/:id          controllers.StepController.updateStepTotallyFromRecipe(request:Request,id: Long,recipeId: Long)
+#PATCH     /step/:id          controllers.StepController.updateStep(request:Request,id: Long)
+PATCH    /recipe/:recipeId/step/:id          controllers.StepController.updateStepFromRecipe(request:Request,id: Long, recipeId: Long)
+#DELETE  /step/:id          controllers.StepController.deleteStep(request:Request,id: Long)
+DELETE  /recipe/:recipeId/step/:id          controllers.StepController.deleteStepFromRecipe(request:Request,id: Long,recipeId: Long)
+
+
+#Categories
+#Category collection
+GET     /categories             controllers.CategoryController.getCategoryCollection(request:Request)
+POST    /categories             controllers.CategoryController.createCategory(request:Request)
+
+#Category resource
+GET     /category/:id          controllers.CategoryController.getCategory(request:Request,id: Long)
+PUT     /category/:id          controllers.CategoryController.updateCategoryTotally(request:Request,id: Long)
+PATCH     /category/:id          controllers.CategoryController.updateCategory(request:Request,id: Long)
+DELETE  /category/:id          controllers.CategoryController.deleteCategory(request:Request,id: Long)

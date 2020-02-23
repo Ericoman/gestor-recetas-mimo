@@ -1,0 +1,11 @@
+@(step:Step, embedded:Boolean = Boolean.FALSE)
+@if(!embedded){
+<?xml version="1.0" encoding="UTF-8" ?>
+}
+<step>
+    <id>@step.getId()</id>
+    <title>@step.getTitle()</title>
+    <description>@step.getDescription()</description>
+    <time>@step.getTime()</time>
+    <recipe>@step.getRecipe.getId()</recipe>
+</step>

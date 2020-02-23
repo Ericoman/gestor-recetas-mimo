@@ -1,20 +1,17 @@
 package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import models.Ingredient;
 import models.Nutrition;
 import models.Recipe;
 import play.data.Form;
 import play.data.FormFactory;
+import play.db.ebean.Transactional;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
-import views.xml.nutrition;
-import views.xml.nutritionCollection;
-import views.xml.recipe;
-import views.xml.recipeCollection;
+import views.xml.*;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -23,11 +20,12 @@ import java.util.List;
 public class NutritionController extends Controller {
     @Inject
     FormFactory formFactory;
-    //TODO Borrar esto y hacerlo con la db
-    List<Nutrition> nutritions = new ArrayList<>();
-    //
-    public Result getNutrition(Http.Request request,Integer id){
-        Nutrition selectedNutrition = this.nutritions.get(id.intValue());
+
+    public Result getNutrition(Http.Request request,Long id){
+        Nutrition selectedNutrition = Nutrition.findById(id);
+        if(selectedNutrition == null){
+            return Results.notFound();
+        }
         if (request.accepts("application/xml")){
             return Results.ok(nutrition.render(selectedNutrition,Boolean.FALSE));
         } else if (request.accepts("application/json")){
@@ -36,14 +34,28 @@ public class NutritionController extends Controller {
             return Results.status(415);
         }
     }
-    public Result createNutrition(Http.Request request){
+    public Result getNutritionFromRecipe(Http.Request request,Long recipeId){
+        Recipe selectedRecipe = Recipe.findById(recipeId);
+        Nutrition selectedNutrition = selectedRecipe.getNutrition();
+        if(selectedNutrition == null){
+            return Results.notFound();
+        }
+        if (request.accepts("application/xml")){
+            return Results.ok(nutrition.render(selectedNutrition,Boolean.FALSE));
+        } else if (request.accepts("application/json")){
+            return Results.ok(Json.toJson(selectedNutrition));
+        }else{
+            return Results.status(415);
+        }
+    }
+    /*public Result createNutrition(Http.Request request){
         Nutrition nutricion;
 
         switch (request.contentType().get()){
             case "application/json":
                 JsonNode jsonBody = request.body().asJson();
                 nutricion = Json.fromJson(jsonBody, Nutrition.class);
-                this.nutritions.add(nutricion);
+                nutricion.save();
                 break;
             default:
                 Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
@@ -51,7 +63,42 @@ public class NutritionController extends Controller {
                     return Results.badRequest(form.errorsAsJson());
                 }
                 nutricion = form.get();
-                this.nutritions.add(nutricion);
+                nutricion.save();
+                break;
+        }
+        if (request.accepts("application/xml")){
+            return Results.created(nutrition.render(nutricion,Boolean.FALSE));
+        } else if (request.accepts("application/json")){
+            return Results.created(Json.toJson(nutricion));
+        }else{
+            return Results.created();
+        }
+    }*/
+    @Transactional
+    public Result createNutritionInRecipe(Http.Request request, Long recipeId){
+        Nutrition nutricion;
+        Recipe selectedRecipe = Recipe.findById(recipeId);
+        if(selectedRecipe.getNutrition() != null){
+            return Results.status(409);
+        }
+
+        switch (request.contentType().get()){
+            case "application/json":
+                JsonNode jsonBody = request.body().asJson();
+                nutricion = Json.fromJson(jsonBody, Nutrition.class);
+                selectedRecipe.setNutrition(nutricion);
+                nutricion.save();
+                selectedRecipe.update();
+                break;
+            default:
+                Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
+                if (form.hasErrors()){
+                    return Results.badRequest(form.errorsAsJson());
+                }
+                nutricion = form.get();
+                selectedRecipe.setNutrition(nutricion);
+                nutricion.save();
+                selectedRecipe.update();
                 break;
         }
         if (request.accepts("application/xml")){
@@ -63,17 +110,88 @@ public class NutritionController extends Controller {
         }
     }
     public Result getNutritionCollection(Http.Request request){
+        List<Nutrition> nutritions = new ArrayList<>();
+        nutritions = Nutrition.findAll();
         if (request.accepts("application/xml")){
-            return Results.ok(nutritionCollection.render(this.nutritions));
+            return Results.ok(nutritionCollection.render(nutritions));
         } else if (request.accepts("application/json")){
-            return Results.ok(Json.toJson(this.nutritions));
+            return Results.ok(Json.toJson(nutritions));
         }else{
             return Results.status(415);
         }
     }
-    public Result updateNutrition(Http.Request request,Integer id){
-        //TODO hacer la comprobación de que existe ese id
-        Nutrition nutricion = this.nutritions.get(id.intValue());
+    /*public Result updateNutritionTotally(Http.Request request, Long id){
+        Nutrition nutricion = Nutrition.findById(id);
+        Nutrition nutricionRecibida;
+        if (nutricion == null){
+            return Results.notFound();
+        }
+        switch (request.contentType().get()){
+            case "application/json":
+                JsonNode jsonBody = request.body().asJson();
+                nutricionRecibida = Json.fromJson(jsonBody, Nutrition.class);
+                nutricion.setAll(nutricionRecibida);
+                nutricion.update();
+                break;
+            default:
+                Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
+                if (form.hasErrors()){
+                    return Results.badRequest(form.errorsAsJson());
+                }
+                nutricionRecibida = form.get();
+                nutricion.setAll(nutricionRecibida);
+                nutricion.update();
+                break;
+        }
+        if (request.accepts("application/xml")){
+            return Results.created(nutrition.render(nutricion,Boolean.FALSE));
+        } else if (request.accepts("application/json")){
+            return Results.created(Json.toJson(nutricion));
+        }else{
+            return Results.created();
+        }
+    }*/
+    public Result updateNutritionTotallyFromRecipe(Http.Request request, Long recipeId){
+        Nutrition nutricion;
+        Nutrition nutricionRecibida;
+        Recipe selectedRecipe = Recipe.findById(recipeId);
+        if (selectedRecipe == null){
+            return Results.notFound();
+        }
+        nutricion = selectedRecipe.getNutrition();
+        if(nutricion == null){
+            return Results.notFound();
+        }
+        switch (request.contentType().get()){
+            case "application/json":
+                JsonNode jsonBody = request.body().asJson();
+                nutricionRecibida = Json.fromJson(jsonBody, Nutrition.class);
+                nutricion.setAll(nutricionRecibida);
+                nutricion.update();
+                break;
+            default:
+                Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
+                if (form.hasErrors()){
+                    return Results.badRequest(form.errorsAsJson());
+                }
+                nutricionRecibida = form.get();
+                nutricion.setAll(nutricionRecibida);
+                nutricion.update();
+                break;
+        }
+        if (request.accepts("application/xml")){
+            return Results.created(nutrition.render(nutricion,Boolean.FALSE));
+        } else if (request.accepts("application/json")){
+            return Results.created(Json.toJson(nutricion));
+        }else{
+            return Results.created();
+        }
+    }
+    /*public Result updateNutrition(Http.Request request,Long id){
+        Nutrition nutricion = Nutrition.findById(id);
+        if(nutricion == null){
+            return Results.notFound();
+        }
 
         switch (request.contentType().get()){
             case "application/json":
@@ -105,6 +223,7 @@ public class NutritionController extends Controller {
                 if(jsonBody.has("protein")){
                     nutricion.setProtein( jsonBody.get("protein").asDouble());
                 }
+                nutricion.update();
                 break;
             default:
                 Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
@@ -140,19 +259,127 @@ public class NutritionController extends Controller {
                 if (nutricionFormulario.getProtein() != null){
                     nutricion.setProtein(nutricionFormulario.getProtein());
                 }
-
+                nutricion.update();
                 break;
         }
         if (request.accepts("application/xml")){
-            return Results.ok(nutrition.render(this.nutritions.get(id),Boolean.FALSE));
+            return Results.ok(nutrition.render(nutricion,Boolean.FALSE));
         } else if (request.accepts("application/json")){
-            return Results.ok(Json.toJson(this.nutritions.get(id)));
+            return Results.ok(Json.toJson(nutricion));
+        }else{
+            return Results.ok();
+        }
+    }*/
+    public Result updateNutritionFromRecipe(Http.Request request,Long recipeId){
+        Nutrition nutricion;
+        Recipe selectedRecipe = Recipe.findById(recipeId);
+        if(selectedRecipe == null){
+            return Results.notFound();
+        }
+        nutricion = selectedRecipe.getNutrition();
+        if(nutricion == null){
+            return Results.notFound();
+        }
+
+        switch (request.contentType().get()){
+            case "application/json":
+                JsonNode jsonBody = request.body().asJson();
+                if(jsonBody.has("portionSize")){
+                    nutricion.setPortionSize( jsonBody.get("portionSize").asText());
+                }
+                if(jsonBody.has("calories")){
+                    nutricion.setCalories(jsonBody.get("calories").asDouble());
+                }
+                if(jsonBody.has("totalFat")){
+                    nutricion.setTotalFat(jsonBody.get("totalFat").asDouble());
+                }
+                if(jsonBody.has("saturatedFat")){
+                    nutricion.setSaturatedFat( jsonBody.get("saturatedFat").asDouble());
+                }
+                if(jsonBody.has("cholesterol")){
+                    nutricion.setCholesterol(jsonBody.get("cholesterol").asDouble());
+                }
+                if(jsonBody.has("totalCarbohydrates")){
+                    nutricion.setTotalCarbohydrates(jsonBody.get("totalCarbohydrates").asDouble());
+                }
+                if(jsonBody.has("fiber")){
+                    nutricion.setFiber( jsonBody.get("fiber").asDouble());
+                }
+                if(jsonBody.has("sugar")){
+                    nutricion.setSugar(jsonBody.get("sugar").asDouble());
+                }
+                if(jsonBody.has("protein")){
+                    nutricion.setProtein( jsonBody.get("protein").asDouble());
+                }
+                nutricion.update();
+                break;
+            default:
+                Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
+                Nutrition nutricionFormulario;
+                if (form.hasErrors()){
+                    return Results.badRequest(form.errorsAsJson());
+                }
+                nutricionFormulario = form.get();
+                if (nutricionFormulario.getPortionSize() != null){
+                    nutricion.setPortionSize(nutricionFormulario.getPortionSize());
+                }
+                if (nutricionFormulario.getCalories() != null){
+                    nutricion.setCalories(nutricionFormulario.getCalories());
+                }
+                if (nutricionFormulario.getTotalFat() != null){
+                    nutricion.setTotalFat(nutricionFormulario.getTotalFat());
+                }
+                if (nutricionFormulario.getSaturatedFat() != null){
+                    nutricion.setSaturatedFat(nutricionFormulario.getSaturatedFat());
+                }
+                if (nutricionFormulario.getCholesterol() != null) {
+                    nutricion.setCholesterol(nutricionFormulario.getCholesterol());
+                }
+                if (nutricionFormulario.getTotalCarbohydrates() != null){
+                    nutricion.setTotalCarbohydrates(nutricionFormulario.getTotalCarbohydrates());
+                }
+                if (nutricionFormulario.getFiber() != null){
+                    nutricion.setFiber(nutricionFormulario.getFiber());
+                }
+                if (nutricionFormulario.getSugar() != null){
+                    nutricion.setSugar(nutricionFormulario.getSugar());
+                }
+                if (nutricionFormulario.getProtein() != null){
+                    nutricion.setProtein(nutricionFormulario.getProtein());
+                }
+                nutricion.update();
+                break;
+        }
+        if (request.accepts("application/xml")){
+            return Results.ok(nutrition.render(nutricion,Boolean.FALSE));
+        } else if (request.accepts("application/json")){
+            return Results.ok(Json.toJson(nutricion));
         }else{
             return Results.ok();
         }
     }
-    public Result deleteNutrition(Http.Request request,Integer id){
-        this.nutritions.remove(id.intValue());
+    @Transactional
+    public Result deleteNutrition(Http.Request request,Long id){
+        Nutrition nutricion = Nutrition.findById(id);
+        if(nutricion == null){
+            return Results.notFound();
+        }
+        Recipe recipe = nutricion.getRecipe();
+        recipe.deleteNutrition();
+        recipe.update();
+        nutricion.delete();
+        return Results.noContent();
+    }
+    @Transactional
+    public Result deleteNutritionFromRecipe(Http.Request request,Long recipeId){
+        Recipe recipe = Recipe.findById(recipeId);
+        if(recipe == null){
+            return Results.notFound();
+        }
+        Nutrition nutrition = recipe.getNutrition();
+        recipe.deleteNutrition();
+        recipe.update();
+        nutrition.delete();
         return Results.noContent();
     }
 }

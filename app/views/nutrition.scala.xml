@@ -3,6 +3,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 }
 <nutrition>
+    <id>@nutrition.getId()</id>
     <portionSize>@nutrition.getPortionSize()</portionSize>
     <calories>@nutrition.getCalories()</calories>
     <totalFat>@nutrition.getTotalFat()</totalFat>

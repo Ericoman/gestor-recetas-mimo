@@ -2,7 +2,10 @@ package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import models.Category;
+import models.Ingredient;
 import models.Recipe;
+import models.Step;
 import play.data.Form;
 import play.data.FormFactory;
 import play.libs.Json;
@@ -12,22 +15,23 @@ import play.mvc.Http;
 
 import  play.mvc.Results;
 
-import play.twirl.api.Template2;
 import views.xml.recipe;
 import views.xml.recipeCollection;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class RecipeController extends Controller {
     @Inject
     FormFactory formFactory;
-    //TODO Borrar esto y hacerlo con la db
-    List<Recipe> recipes = new ArrayList<>();
-    //
-    public Result getRecipe(Http.Request request,Integer id){
-        Recipe selectedRecipe = this.recipes.get(id.intValue());
+
+    public Result getRecipe(Http.Request request,Long id){
+        Recipe selectedRecipe = Recipe.findById(id);
+        if(selectedRecipe == null){
+            return Results.notFound();
+        }
         if (request.accepts("application/xml")){
             return Results.ok(recipe.render(selectedRecipe,Boolean.FALSE));
         } else if (request.accepts("application/json")){
@@ -43,7 +47,7 @@ public class RecipeController extends Controller {
             case "application/json":
                 JsonNode jsonBody = request.body().asJson();
                 receta = Json.fromJson(jsonBody, Recipe.class);
-                this.recipes.add(receta);
+                receta.save();
                 break;
             default:
                 Form<Recipe> form =  formFactory.form(Recipe.class).bindFromRequest(request);
@@ -51,29 +55,65 @@ public class RecipeController extends Controller {
                     return Results.badRequest(form.errorsAsJson());
                 }
                 receta = form.get();
-                this.recipes.add(receta);
+                receta.save();
                 break;
         }
         if (request.accepts("application/xml")){
-            return Results.created(recipe.render(receta,Boolean.FALSE));
+            return Results.created(recipe.render(Recipe.findById(receta.getId()),Boolean.FALSE));
         } else if (request.accepts("application/json")){
-            return Results.created(Json.toJson(receta));
+            return Results.created(Json.toJson(Recipe.findById(receta.getId())));
         }else{
             return Results.created();
         }
     }
     public Result getRecipeCollection(Http.Request request){
+        List<Recipe> recipes = new ArrayList<>();
+        recipes = Recipe.findAll();
         if (request.accepts("application/xml")){
-            return Results.ok(recipeCollection.render(this.recipes));
+            return Results.ok(recipeCollection.render(recipes));
         } else if (request.accepts("application/json")){
-            return Results.ok(Json.toJson(this.recipes));
+            return Results.ok(Json.toJson(recipes));
         }else{
             return Results.status(415);
         }
     }
-    public Result updateRecipe(Http.Request request,Integer id){
-        //TODO hacer la comprobación de que existe ese id
-        Recipe receta = this.recipes.get(id.intValue());
+    public Result updateRecipeTotally(Http.Request request, Long id){
+        Recipe receta = Recipe.findById(id);
+        Recipe recetaRecibida;
+        if(receta == null){
+            return Results.notFound();
+        }
+
+        switch (request.contentType().get()){
+            case "application/json":
+                JsonNode jsonBody = request.body().asJson();
+                recetaRecibida = Json.fromJson(jsonBody, Recipe.class);
+                receta.setAll(recetaRecibida);
+                receta.update();
+                break;
+            default:
+                Form<Recipe> form =  formFactory.form(Recipe.class).bindFromRequest(request);
+                if (form.hasErrors()){
+                    return Results.badRequest(form.errorsAsJson());
+                }
+                recetaRecibida = form.get();
+                receta.setAll(recetaRecibida);
+                receta.update();
+                break;
+        }
+        if (request.accepts("application/xml")){
+            return Results.created(recipe.render(Recipe.findById(receta.getId()),Boolean.FALSE));
+        } else if (request.accepts("application/json")){
+            return Results.created(Json.toJson(Recipe.findById(receta.getId())));
+        }else{
+            return Results.created();
+        }
+    }
+    public Result updateRecipe(Http.Request request,Long id){
+        Recipe receta = Recipe.findById(id);
+        if(receta == null){
+            return Results.notFound();
+        }
 
         switch (request.contentType().get()){
             case "application/json":
@@ -82,7 +122,12 @@ public class RecipeController extends Controller {
                     receta.setTitle( jsonBody.get("title").asText());
                 }
                 if(jsonBody.has("categories")){
-                    receta.setCategories(jsonBody.get("categories").asText());
+                    receta.clearCategories();
+                    Iterator<JsonNode> iterator = jsonBody.get("categories").elements();
+                    while (iterator.hasNext()){
+                        Category category = Json.fromJson(iterator.next(),Category.class);
+                        receta.addCategory(category);
+                    }
                 }
                 if(jsonBody.has("source")){
                     receta.setSource(jsonBody.get("source").asText());
@@ -96,10 +141,15 @@ public class RecipeController extends Controller {
                 if(jsonBody.has("calification")){
                     receta.setCalification(jsonBody.get("calification").asDouble());
                 }
-                if(jsonBody.has("steps")){
-                    receta.setSteps( jsonBody.get("steps").asText());
+                if(jsonBody.has("ingredients")){
+                    receta.clearIngredients();
+                    Iterator<JsonNode> iterator = jsonBody.get("ingredients").elements();
+                    while (iterator.hasNext()){
+                        Ingredient ingredient = Json.fromJson(iterator.next(),Ingredient.class);
+                        receta.addIngredient(ingredient);
+                    }
                 }
-                //Ver como hacer nutricion
+                receta.update();
                 break;
             default:
                 Form<Recipe> form =  formFactory.form(Recipe.class).bindFromRequest(request);
@@ -126,22 +176,22 @@ public class RecipeController extends Controller {
                 if (recetaFormulario.getCalification() != null){
                     receta.setCalification(recetaFormulario.getCalification());
                 }
-                if (recetaFormulario.getSteps() != null){
-                    receta.setSteps(recetaFormulario.getSteps());
+                if (recetaFormulario.getIngredients() != null){
+                    receta.setIngredients(recetaFormulario.getIngredients());
                 }
-
+                receta.update();
                 break;
         }
         if (request.accepts("application/xml")){
-            return Results.ok(recipe.render(this.recipes.get(id),Boolean.FALSE));
+            return Results.ok(recipe.render(Recipe.findById(receta.getId()),Boolean.FALSE));
         } else if (request.accepts("application/json")){
-            return Results.ok(Json.toJson(this.recipes.get(id)));
+            return Results.ok(Json.toJson(Recipe.findById(receta.getId())));
         }else{
             return Results.ok();
         }
     }
-    public Result deleteRecipe(Http.Request request,Integer id){
-        this.recipes.remove(id.intValue());
+    public Result deleteRecipe(Http.Request request,Long id){
+        Recipe.find.deleteById(id);
         return Results.noContent();
     }
 }
