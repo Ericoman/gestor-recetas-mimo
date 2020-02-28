@@ -1,10 +1,18 @@
 @(category:Category, embedded:Boolean = Boolean.FALSE)
-@if(!embedded){
+@import environment.AddressesInterface
+
+        @if(!embedded){
 <?xml version="1.0" encoding="UTF-8" ?>
 }
-<step>
+<category>
     <id>@category.getId()</id>
     <name>@category.getName()</name>
     <double>@category.getPopularity()</double>
-    //ver como hacer las recipes
-</step>
+    <recipes>@for(r <- category.getRecipes){
+        <recipe>
+            <id>@r.getId()</id>
+            <title>@r.getTitle</title>
+            <link>@(AddressesInterface.http_completeAddress + "/recipe/" + r.getId()) </link>
+        </recipe>
+        }</recipes>
+</category>

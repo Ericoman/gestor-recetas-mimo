@@ -1,4 +1,5 @@
 @(nutrition:Nutrition, embedded:Boolean = Boolean.FALSE)
+@import environment.AddressesInterface
 @if(!embedded){
 <?xml version="1.0" encoding="UTF-8" ?>
 }
@@ -13,4 +14,9 @@
     <fiber>@nutrition.getFiber()</fiber>
     <sugar>@nutrition.getSugar()</sugar>
     <protein>@nutrition.getProtein()</protein>
+    <recipe>
+        <id>@nutrition.getRecipe().getId()</id>
+        <title>@nutrition.getRecipe().getTitle</title>
+        <link>@(AddressesInterface.http_completeAddress + "/recipe/" + nutrition.getRecipe().getId()) </link>
+    </recipe>
 </nutrition>

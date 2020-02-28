@@ -1,18 +1,41 @@
 @(recipe:Recipe, embedded:Boolean = Boolean.FALSE)
+@import environment.AddressesInterface
 @if(!embedded){
 <?xml version="1.0" encoding="UTF-8" ?>
 }
 <recipe>
     <id>@recipe.getId()</id>
     <title>@recipe.getTitle()</title>
-    <categories>@recipe.getCategories()</categories>
+    <categories>@for(c <- recipe.getCategories()){
+        <category>
+            <id>@c.getId()</id>
+            <name>@c.getName</name>
+            <link>@(AddressesInterface.http_completeAddress + "/category/" + c.getId()) </link>
+        </category>
+        }</categories>
     <source>@recipe.getSource()</source>
     <portions>@recipe.getPortions()</portions>
     <time>@recipe.getTime()</time>
     <calification>@recipe.getCalification()</calification>
-    <steps>@recipe.getSteps()</steps>
+    <steps>@for(s <- recipe.getSteps()){
+        <step>
+            <id>@s.getId()</id>
+            <number>@s.getNumber()</number>
+            <title>@s.getTitle</title>
+            <link>@(AddressesInterface.http_completeAddress + "/step/" + s.getId()) </link>
+        </step>
+        }</steps>
     @if(recipe.getNutrition() != null){
-    <nutrition>@nutrition(recipe.getNutrition())</nutrition>
+    <nutrition>
+        <id>@recipe.getNutrition().getId()</id>
+        <link>@(AddressesInterface.http_completeAddress + "/nutrition/" + recipe.getNutrition().getId()) </link>
+    </nutrition>
     }
-    <ingredients>@recipe.getIngredients()</ingredients>
+    <ingredients>@for(i <- recipe.getIngredients()){
+        <ingredient>
+            <id>@i.getId()</id>
+            <name>@i.getName</name>
+            <link>@(AddressesInterface.http_completeAddress + "/ingredient/" + i.getId()) </link>
+        </ingredient>
+        }</ingredients>
 </recipe>

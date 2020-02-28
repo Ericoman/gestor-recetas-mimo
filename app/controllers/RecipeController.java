@@ -6,8 +6,10 @@ import models.Category;
 import models.Ingredient;
 import models.Recipe;
 import models.Step;
+import play.api.i18n.MessagesApi;
 import play.data.Form;
 import play.data.FormFactory;
+import play.db.ebean.Transactional;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -24,9 +26,13 @@ import java.util.Iterator;
 import java.util.List;
 
 public class RecipeController extends Controller {
-    @Inject
     FormFactory formFactory;
-
+    MessagesApi messagesApi;
+    @Inject
+    public RecipeController(FormFactory formFactory, MessagesApi messagesApi){
+        this.formFactory=formFactory;
+        this.messagesApi=messagesApi;
+    }
     public Result getRecipe(Http.Request request,Long id){
         Recipe selectedRecipe = Recipe.findById(id);
         if(selectedRecipe == null){
@@ -37,26 +43,39 @@ public class RecipeController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(selectedRecipe));
         }else{
-            return Results.status(415);
+            return Results.status(415, messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
+    @Transactional
     public Result createRecipe(Http.Request request){
         Recipe receta;
-
+        List<Category> categoryList;
+        List<Ingredient> ingredientList;
         switch (request.contentType().get()){
             case "application/json":
                 JsonNode jsonBody = request.body().asJson();
                 receta = Json.fromJson(jsonBody, Recipe.class);
+                categoryList = Category.findAllFromRecipeByName(receta);
+                ingredientList = Ingredient.findAllFromRecipeByName(receta);
+                receta.setCategories(categoryList);
+                receta.setIngredients(ingredientList);
                 receta.save();
+
                 break;
-            default:
+            case "application/x-www-form-urlencoded":
                 Form<Recipe> form =  formFactory.form(Recipe.class).bindFromRequest(request);
                 if (form.hasErrors()){
                     return Results.badRequest(form.errorsAsJson());
                 }
                 receta = form.get();
+                categoryList = Category.findAllFromRecipeByName(receta);
+                ingredientList = Ingredient.findAllFromRecipeByName(receta);
+                receta.setCategories(categoryList);
+                receta.setIngredients(ingredientList);
                 receta.save();
                 break;
+            default:
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.created(recipe.render(Recipe.findById(receta.getId()),Boolean.FALSE));
@@ -74,12 +93,15 @@ public class RecipeController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(recipes));
         }else{
-            return Results.status(415);
+            return Results.status(415, messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
+    @Transactional
     public Result updateRecipeTotally(Http.Request request, Long id){
         Recipe receta = Recipe.findById(id);
         Recipe recetaRecibida;
+        List<Category> categoryList;
+        List<Ingredient> ingredientList;
         if(receta == null){
             return Results.notFound();
         }
@@ -89,17 +111,28 @@ public class RecipeController extends Controller {
                 JsonNode jsonBody = request.body().asJson();
                 recetaRecibida = Json.fromJson(jsonBody, Recipe.class);
                 receta.setAll(recetaRecibida);
+                categoryList = Category.findAllFromRecipeByName(receta);
+                ingredientList = Ingredient.findAllFromRecipeByName(receta);
+                receta.setCategories(categoryList);
+                receta.setIngredients(ingredientList);
                 receta.update();
+
                 break;
-            default:
+            case "application/x-www-form-urlencoded":
                 Form<Recipe> form =  formFactory.form(Recipe.class).bindFromRequest(request);
                 if (form.hasErrors()){
                     return Results.badRequest(form.errorsAsJson());
                 }
                 recetaRecibida = form.get();
                 receta.setAll(recetaRecibida);
+                categoryList = Category.findAllFromRecipeByName(receta);
+                ingredientList = Ingredient.findAllFromRecipeByName(receta);
+                receta.setCategories(categoryList);
+                receta.setIngredients(ingredientList);
                 receta.update();
                 break;
+            default:
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.created(recipe.render(Recipe.findById(receta.getId()),Boolean.FALSE));
@@ -109,8 +142,11 @@ public class RecipeController extends Controller {
             return Results.created();
         }
     }
+    @Transactional
     public Result updateRecipe(Http.Request request,Long id){
         Recipe receta = Recipe.findById(id);
+        List<Category> categoryList;
+        List<Ingredient> ingredientList;
         if(receta == null){
             return Results.notFound();
         }
@@ -126,7 +162,11 @@ public class RecipeController extends Controller {
                     Iterator<JsonNode> iterator = jsonBody.get("categories").elements();
                     while (iterator.hasNext()){
                         Category category = Json.fromJson(iterator.next(),Category.class);
-                        receta.addCategory(category);
+                        category = Category.findByName(category.getName());
+                        if(category != null) {
+                            receta.addCategory(category);
+                            category.update();
+                        }
                     }
                 }
                 if(jsonBody.has("source")){
@@ -146,12 +186,16 @@ public class RecipeController extends Controller {
                     Iterator<JsonNode> iterator = jsonBody.get("ingredients").elements();
                     while (iterator.hasNext()){
                         Ingredient ingredient = Json.fromJson(iterator.next(),Ingredient.class);
-                        receta.addIngredient(ingredient);
+                        ingredient = Ingredient.findByName(ingredient.getName());
+                        if(ingredient != null) {
+                            receta.addIngredient(ingredient);
+                            ingredient.update();
+                        }
                     }
                 }
                 receta.update();
                 break;
-            default:
+            case "application/x-www-form-urlencoded":
                 Form<Recipe> form =  formFactory.form(Recipe.class).bindFromRequest(request);
                 Recipe recetaFormulario;
                 if (form.hasErrors()){
@@ -162,7 +206,13 @@ public class RecipeController extends Controller {
                     receta.setTitle(recetaFormulario.getTitle());
                 }
                 if (recetaFormulario.getCategories() != null){
-                    receta.setCategories(recetaFormulario.getCategories());
+                    categoryList = Category.findAllFromRecipeByName(receta);
+                    receta.setCategories(categoryList);
+                    /*receta.clearCategories();
+                    for(Category c: categoryList){
+                        receta.addCategory(c);
+                        c.update();
+                    }*/
                 }
                 if (recetaFormulario.getSource() != null){
                     receta.setSource(recetaFormulario.getSource());
@@ -177,10 +227,18 @@ public class RecipeController extends Controller {
                     receta.setCalification(recetaFormulario.getCalification());
                 }
                 if (recetaFormulario.getIngredients() != null){
-                    receta.setIngredients(recetaFormulario.getIngredients());
+                    ingredientList = Ingredient.findAllFromRecipeByName(receta);
+                    receta.setIngredients(ingredientList);
+                    /*receta.clearIngredients();
+                    for(Ingredient i: ingredientList){
+                        receta.addIngredient(i);
+                        i.update();
+                    }*/
                 }
                 receta.update();
                 break;
+            default:
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.ok(recipe.render(Recipe.findById(receta.getId()),Boolean.FALSE));

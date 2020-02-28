@@ -2,10 +2,15 @@ package models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.ebean.Finder;
 import io.ebean.annotation.NotNull;
 import org.checkerframework.checker.units.qual.A;
 import play.data.validation.Constraints;
+import views.CategoryRefSerializer;
+import views.IngredientRefSerializer;
+import views.SingleNutritionRefSerializer;
+import views.StepRefSerializer;
 
 import javax.persistence.*;
 import javax.validation.Constraint;
@@ -20,6 +25,7 @@ public class Recipe extends BaseModel {
     @NotNull
     private String title; //No nulo
     @JsonIgnoreProperties(value="recipes")
+    @JsonSerialize(using = CategoryRefSerializer.class)
     @ManyToMany(cascade = CascadeType.REMOVE)
     private List<Category> categories;// Many to Many
     private String source;
@@ -37,13 +43,16 @@ public class Recipe extends BaseModel {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @JsonIgnoreProperties(value="recipe")
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "recipe")
+    @JsonSerialize(using = StepRefSerializer.class)
     private List<Step> steps; //One to Many
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @JsonIgnoreProperties(value="recipe")
+    @JsonSerialize(using = SingleNutritionRefSerializer.class)
     @OneToOne(cascade = {CascadeType.ALL})
     @JoinColumn(name="id_nutrition")
     private Nutrition nutrition;
     @JsonIgnoreProperties(value="recipes")
+    @JsonSerialize(using = IngredientRefSerializer.class)
     @ManyToMany(cascade = {CascadeType.REMOVE})
     private List<Ingredient> ingredients;
 
@@ -86,7 +95,7 @@ public class Recipe extends BaseModel {
     }
 
     public void  addCategory(Category category){
-        if(!this.ingredients.contains(category)){
+        if(!this.categories.contains(category)){
             category.addRecipe(this);
             this.categories.add(category);
         }
@@ -227,6 +236,46 @@ public class Recipe extends BaseModel {
     }
     public static List<Recipe> findAll(){
         return find.all();
+    }
+    public static List<Recipe> findAllFromIngredient(Ingredient ingredient){
+        List<Long> recipesIds = new ArrayList<>();
+        for(Recipe r : ingredient.getRecipes()){
+            recipesIds.add(r.getId());
+        }
+        if(recipesIds.isEmpty()){
+            return new ArrayList<>(ingredient.getRecipes());
+        }
+        return find.query().where().idIn(recipesIds).findList();
+    }
+    public static List<Recipe> findAllFromIngredientByTitle(Ingredient ingredient){
+        List<String> recipesTitles = new ArrayList<>();
+        for(Recipe r : ingredient.getRecipes()){
+            recipesTitles.add(r.getTitle());
+        }
+        if(recipesTitles.isEmpty()){
+            return new ArrayList<>(ingredient.getRecipes());
+        }
+        return find.query().where().in("title",recipesTitles).findList();
+    }
+    public static List<Recipe> findAllFromCategory(Category category){
+        List<Long> recipesIds = new ArrayList<>();
+        for(Recipe r : category.getRecipes()){
+            recipesIds.add(r.getId());
+        }
+        if(recipesIds.isEmpty()){
+            return new ArrayList<>(category.getRecipes());
+        }
+        return find.query().where().idIn(recipesIds).findList();
+    }
+    public static List<Recipe> findAllFromCategoryByTitle(Category category){
+        List<String> recipesTitles = new ArrayList<>();
+        for(Recipe r : category.getRecipes()){
+            recipesTitles.add(r.getTitle());
+        }
+        if(recipesTitles.isEmpty()){
+            return new ArrayList<>(category.getRecipes());
+        }
+        return find.query().where().in("title",recipesTitles).findList();
     }
     public static Recipe findByTitle(String title){
         return find.query().where().eq("title",title).findOne();

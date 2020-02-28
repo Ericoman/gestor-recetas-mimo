@@ -3,6 +3,7 @@ package controllers;
 import com.fasterxml.jackson.databind.JsonNode;
 import models.Nutrition;
 import models.Recipe;
+import play.api.i18n.MessagesApi;
 import play.data.Form;
 import play.data.FormFactory;
 import play.db.ebean.Transactional;
@@ -18,9 +19,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NutritionController extends Controller {
-    @Inject
     FormFactory formFactory;
-
+    MessagesApi messagesApi;
+    @Inject
+    public NutritionController(FormFactory formFactory, MessagesApi messagesApi){
+        this.formFactory=formFactory;
+        this.messagesApi=messagesApi;
+    }
     public Result getNutrition(Http.Request request,Long id){
         Nutrition selectedNutrition = Nutrition.findById(id);
         if(selectedNutrition == null){
@@ -31,11 +36,14 @@ public class NutritionController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(selectedNutrition));
         }else{
-            return Results.status(415);
+            return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
     public Result getNutritionFromRecipe(Http.Request request,Long recipeId){
         Recipe selectedRecipe = Recipe.findById(recipeId);
+        if(selectedRecipe == null){
+            return Results.notFound();
+        }
         Nutrition selectedNutrition = selectedRecipe.getNutrition();
         if(selectedNutrition == null){
             return Results.notFound();
@@ -45,7 +53,7 @@ public class NutritionController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(selectedNutrition));
         }else{
-            return Results.status(415);
+            return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
     /*public Result createNutrition(Http.Request request){
@@ -79,7 +87,7 @@ public class NutritionController extends Controller {
         Nutrition nutricion;
         Recipe selectedRecipe = Recipe.findById(recipeId);
         if(selectedRecipe.getNutrition() != null){
-            return Results.status(409);
+            return Results.notFound();
         }
 
         switch (request.contentType().get()){
@@ -87,19 +95,21 @@ public class NutritionController extends Controller {
                 JsonNode jsonBody = request.body().asJson();
                 nutricion = Json.fromJson(jsonBody, Nutrition.class);
                 selectedRecipe.setNutrition(nutricion);
-                nutricion.save();
-                selectedRecipe.update();
+                selectedRecipe.save();
+                //nutricion.save(); con la cascada de SAVE no es necesario ya que se hace automáticamente
                 break;
-            default:
+            case "application/x-www-form-urlencoded":
                 Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
                 if (form.hasErrors()){
                     return Results.badRequest(form.errorsAsJson());
                 }
                 nutricion = form.get();
                 selectedRecipe.setNutrition(nutricion);
-                nutricion.save();
-                selectedRecipe.update();
+                selectedRecipe.save();
+                //nutricion.save(); con la cascada de SAVE no es necesario ya que se hace automáticamente
                 break;
+            default:
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.created(nutrition.render(nutricion,Boolean.FALSE));
@@ -117,7 +127,7 @@ public class NutritionController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(nutritions));
         }else{
-            return Results.status(415);
+            return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
     /*public Result updateNutritionTotally(Http.Request request, Long id){
@@ -169,7 +179,7 @@ public class NutritionController extends Controller {
                 nutricion.setAll(nutricionRecibida);
                 nutricion.update();
                 break;
-            default:
+            case "application/x-www-form-urlencoded":
                 Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
                 if (form.hasErrors()){
                     return Results.badRequest(form.errorsAsJson());
@@ -178,6 +188,8 @@ public class NutritionController extends Controller {
                 nutricion.setAll(nutricionRecibida);
                 nutricion.update();
                 break;
+            default:
+                return Results.status(415, messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.created(nutrition.render(nutricion,Boolean.FALSE));
@@ -313,7 +325,7 @@ public class NutritionController extends Controller {
                 }
                 nutricion.update();
                 break;
-            default:
+            case "application/x-www-form-urlencoded":
                 Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
                 Nutrition nutricionFormulario;
                 if (form.hasErrors()){
@@ -349,6 +361,8 @@ public class NutritionController extends Controller {
                 }
                 nutricion.update();
                 break;
+            default:
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.ok(nutrition.render(nutricion,Boolean.FALSE));

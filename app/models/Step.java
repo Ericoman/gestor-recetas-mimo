@@ -2,9 +2,12 @@ package models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.ebean.Finder;
 import io.ebean.annotation.NotNull;
 import play.data.validation.Constraints;
+import views.IngredientRefSerializer;
+import views.SingleRecipeRefSerializer;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
@@ -16,7 +19,6 @@ public class Step extends BaseModel {
     @NotNull
     @Constraints.Min(1)
     @Min(1)
-    @Column(unique = true)
     private Long number;
     @Constraints.Required
     @NotNull
@@ -26,6 +28,7 @@ public class Step extends BaseModel {
     @Min(0)
     private Double time;
     @JsonIgnoreProperties(value="steps")
+    @JsonSerialize(using = SingleRecipeRefSerializer.class)
     @ManyToOne
     private Recipe recipe;
 

@@ -1,11 +1,17 @@
 @(step:Step, embedded:Boolean = Boolean.FALSE)
+@import environment.AddressesInterface
 @if(!embedded){
 <?xml version="1.0" encoding="UTF-8" ?>
 }
 <step>
     <id>@step.getId()</id>
+    <number>@step.getNumber()</number>
     <title>@step.getTitle()</title>
     <description>@step.getDescription()</description>
     <time>@step.getTime()</time>
-    <recipe>@step.getRecipe.getId()</recipe>
+    <recipe>
+        <id>@step.getRecipe().getId()</id>
+        <title>@step.getRecipe().getTitle</title>
+        <link>@(AddressesInterface.http_completeAddress + "/recipe/" + step.getRecipe().getId()) </link>
+    </recipe>
 </step>

@@ -2,9 +2,12 @@ package models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.ebean.Finder;
 import io.ebean.annotation.NotNull;
 import play.data.validation.Constraints;
+import views.SingleNutritionRefSerializer;
+import views.SingleRecipeRefSerializer;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
@@ -43,6 +46,7 @@ public class Nutrition extends BaseModel {
     private Double protein;
     @NotNull
     @JsonIgnoreProperties(value="nutrition")
+    @JsonSerialize(using = SingleRecipeRefSerializer.class)
     @OneToOne(mappedBy="nutrition")
     private Recipe recipe;
 

@@ -3,8 +3,10 @@ package controllers;
 import com.fasterxml.jackson.databind.JsonNode;
 import models.Category;
 import models.Recipe;
+import play.api.i18n.MessagesApi;
 import play.data.Form;
 import play.data.FormFactory;
+import play.db.ebean.Transactional;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -20,9 +22,13 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 
 public class CategoryController extends Controller {
-    @Inject
     FormFactory formFactory;
-
+    MessagesApi messagesApi;
+    @Inject
+    public CategoryController(FormFactory formFactory,MessagesApi messagesApi){
+        this.formFactory=formFactory;
+        this.messagesApi=messagesApi;
+    }
     public Result getCategory(Http.Request request, Long id){
         Category selectedCategory = Category.findById(id);
         if(selectedCategory == null){
@@ -33,27 +39,43 @@ public class CategoryController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(selectedCategory));
         }else{
-            return Results.status(415);
+            return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
+    @Transactional
     public Result createCategory(Http.Request request){
         Category categoria;
-
+        List<Recipe> recipeList;
         switch (request.contentType().get()){
             case "application/json":
                 JsonNode jsonBody = request.body().asJson();
                 categoria = Json.fromJson(jsonBody, Category.class);
+                recipeList = Recipe.findAllFromCategoryByTitle(categoria);
+                categoria.clearRecipes();
                 categoria.save();
+                for(Recipe r: recipeList){
+                    r.addCategory(categoria);
+                    r.save();
+                }
+                //categoria.save();
                 break;
-            default:
+            case "application/x-www-form-urlencoded":
                 Form<Category> form =  formFactory.form(Category.class).bindFromRequest(request);
                 if (form.hasErrors()){
                     return Results.badRequest(form.errorsAsJson());
                 }
                 categoria = form.get();
+                recipeList = Recipe.findAllFromCategoryByTitle(categoria);
+                categoria.clearRecipes();
                 categoria.save();
+                for(Recipe r: recipeList){
+                    r.addCategory(categoria);
+                    r.save();
+                }
 
                 break;
+            default:
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.created(category.render(Category.findById(categoria.getId()),Boolean.FALSE));
@@ -71,12 +93,29 @@ public class CategoryController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(categories));
         }else{
-            return Results.status(415);
+            return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
+    public Result getCategoryCollectionFromRecipe(Http.Request request,Long recipeId){
+        List<Category> categories = new ArrayList<>();
+        Recipe selectedRecipe = Recipe.findById(recipeId);
+        if(selectedRecipe == null){
+            return Results.notFound();
+        }
+        categories = Category.findAllFromRecipe(selectedRecipe);
+        if (request.accepts("application/xml")){
+            return Results.ok(categoryCollection.render(categories));
+        } else if (request.accepts("application/json")){
+            return Results.ok(Json.toJson(categories));
+        }else{
+            return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
+        }
+    }
+    @Transactional
     public Result updateCategoryTotally(Http.Request request,Long id){
         Category categoria = Category.findById(id);
         Category categoriaRecibida;
+        List<Recipe> recipeList;
         if(categoria == null){
             return Results.notFound();
         }
@@ -85,6 +124,12 @@ public class CategoryController extends Controller {
                 JsonNode jsonBody = request.body().asJson();
                 categoriaRecibida = Json.fromJson(jsonBody, Category.class);
                 categoria.setAll(categoriaRecibida);
+                recipeList = Recipe.findAllFromCategoryByTitle(categoria);
+                categoria.clearRecipes();
+                for(Recipe r: recipeList){
+                    r.addCategory(categoria);
+                    r.update();
+                }
                 categoria.update();
                 break;
             case "application/x-www-form-urlencoded":
@@ -94,11 +139,17 @@ public class CategoryController extends Controller {
                 }
                 categoriaRecibida = form.get();
                 categoria.setAll(categoriaRecibida);
+                recipeList = Recipe.findAllFromCategoryByTitle(categoria);
+                categoria.clearRecipes();
+                for(Recipe r: recipeList){
+                    r.addCategory(categoria);
+                    r.update();
+                }
                 categoria.update();
 
                 break;
             default:
-                return Results.status(415);
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.created(category.render(Category.findById(categoria.getId()),Boolean.FALSE));
@@ -108,8 +159,10 @@ public class CategoryController extends Controller {
             return Results.created();
         }
     }
+    @Transactional
     public Result updateCategory(Http.Request request,Long id){
         Category categoria = Category.findById(id);
+        List<Recipe> recipeList;
         if(categoria == null){
             return Results.notFound();
         }
@@ -127,7 +180,11 @@ public class CategoryController extends Controller {
                     Iterator<JsonNode> iterator = jsonBody.get("recipes").elements();
                     while (iterator.hasNext()){
                         Recipe recipe = Json.fromJson(iterator.next(),Recipe.class);
-                        recipe.addCategory(categoria);
+                        recipe = Recipe.findByTitle(recipe.getTitle());
+                        if(recipe != null) {
+                            recipe.addCategory(categoria);
+                            recipe.update();
+                        }
                     }
                 }
                 categoria.update();
@@ -148,10 +205,16 @@ public class CategoryController extends Controller {
                 if(categoriaFormulario.getRecipes() != null){
                     categoria.setRecipes(categoriaFormulario.getRecipes());
                 }
+                recipeList = Recipe.findAllFromCategoryByTitle(categoria);
+                categoria.clearRecipes();
+                for(Recipe r: recipeList){
+                    r.addCategory(categoria);
+                    r.update();
+                }
                 categoria.update();
                 break;
             default:
-                return Results.status(415);
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.ok(category.render(Category.findById(categoria.getId()),Boolean.FALSE));

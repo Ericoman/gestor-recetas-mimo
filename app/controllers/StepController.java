@@ -1,16 +1,18 @@
 package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.internal.cglib.core.$ReflectUtils;
 import models.Recipe;
 import models.Step;
+import play.api.i18n.MessagesApi;
 import play.data.Form;
 import play.data.FormFactory;
+import play.db.ebean.Transactional;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
+
 import views.xml.step;
 import views.xml.stepCollection;
 
@@ -19,9 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StepController extends Controller {
-    @Inject
     FormFactory formFactory;
-
+    MessagesApi messagesApi;
+    @Inject
+    public StepController(MessagesApi messagesApi, FormFactory formFactory){
+        this.messagesApi = messagesApi;
+        this.formFactory = formFactory;
+    }
     public Result getStep(Http.Request request, Long id){
         Step selectedStep = Step.findById(id);
         if(selectedStep == null){
@@ -32,7 +38,7 @@ public class StepController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(selectedStep));
         }else{
-            return Results.status(415);
+            return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
     public Result getStepFromRecipe(Http.Request request, Long id, Long recipeId){
@@ -45,7 +51,7 @@ public class StepController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(selectedStep));
         }else{
-            return Results.status(415);
+            return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
     /*public Result createStep(Http.Request request){
@@ -75,6 +81,7 @@ public class StepController extends Controller {
             return Results.created();
         }
     }*/
+    @Transactional
     public Result createStepInRecipe(Http.Request request, Long recipeId){
         Step paso;
         Recipe selectedRecipe = Recipe.findById(recipeId);
@@ -86,7 +93,8 @@ public class StepController extends Controller {
                 JsonNode jsonBody = request.body().asJson();
                 paso = Json.fromJson(jsonBody, Step.class);
                 selectedRecipe.addStep(paso);
-                paso.save();
+                selectedRecipe.save();
+                //paso.save();
                 break;
             case "application/x-www-form-urlencoded":
                 Form<Step> form =  formFactory.form(Step.class).bindFromRequest(request);
@@ -95,10 +103,11 @@ public class StepController extends Controller {
                 }
                 paso = form.get();
                 selectedRecipe.addStep(paso);
-                paso.save();
+                selectedRecipe.save();
+                //paso.save(); con la cascada de SAVE activada no es necesario
                 break;
             default:
-                return Results.status(415);
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.created(step.render(paso,Boolean.FALSE));
@@ -117,7 +126,8 @@ public class StepController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(steps));
         }else{
-            return Results.status(415);
+
+            return Results.status(415, messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
     public Result getStepCollectionFromRecipe(Http.Request request, Long recipeId){
@@ -129,10 +139,10 @@ public class StepController extends Controller {
         } else if (request.accepts("application/json")){
             return Results.ok(Json.toJson(steps));
         }else{
-            return Results.status(415);
+            return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
-    public Result updateStepTotally(Http.Request request, Long id){
+    /*public Result updateStepTotally(Http.Request request, Long id){
         Step paso = Step.findById(id);
         if(paso == null){
             return Results.notFound();
@@ -163,7 +173,7 @@ public class StepController extends Controller {
         }else{
             return Results.created();
         }
-    }
+    }*/
 
     public Result updateStepTotallyFromRecipe(Http.Request request, Long id, Long recipeId){
         Step paso = Step.findByIdFromRecipe(id,recipeId);
@@ -179,7 +189,7 @@ public class StepController extends Controller {
                 paso.setAll(pasoRecibido);
                 paso.update();
                 break;
-            default:
+            case "application/x-www-form-urlencoded":
                 Form<Step> form =  formFactory.form(Step.class).bindFromRequest(request);
                 if (form.hasErrors()){
                     return Results.badRequest(form.errorsAsJson());
@@ -188,6 +198,8 @@ public class StepController extends Controller {
                 paso.setAll(pasoRecibido);
                 paso.update();
                 break;
+            default:
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         if (request.accepts("application/xml")){
             return Results.created(step.render(paso,Boolean.FALSE));
@@ -197,7 +209,7 @@ public class StepController extends Controller {
             return Results.created();
         }
     }
-    public Result updateStep(Http.Request request,Long id){
+    /*public Result updateStep(Http.Request request,Long id){
         Step paso = Step.findById(id);
         if(paso == null){
             return Results.notFound();
@@ -250,7 +262,7 @@ public class StepController extends Controller {
         }else{
             return Results.ok();
         }
-    }
+    }*/
     public Result updateStepFromRecipe(Http.Request request,Long id, Long recipeId){
         Step paso = Step.findByIdFromRecipe(id,recipeId);
         if(paso == null){
@@ -274,7 +286,7 @@ public class StepController extends Controller {
                 }
                 paso.update();
                 break;
-            default:
+            case "application/x-wwww-form-urlencoded":
                 Form<Step> form =  formFactory.form(Step.class).bindFromRequest(request);
                 Step pasoFormulario;
                 if (form.hasErrors()){
@@ -295,6 +307,8 @@ public class StepController extends Controller {
                 }
                 paso.update();
                 break;
+            default:
+                return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.ContentType", request.acceptedTypes()));
         }
         //paso.update();
         if (request.accepts("application/xml")){
@@ -305,10 +319,10 @@ public class StepController extends Controller {
             return Results.ok();
         }
     }
-    public Result deleteStep(Http.Request request,Long id){
+    /*public Result deleteStep(Http.Request request,Long id){
         Step.find.deleteById(id);
         return Results.noContent();
-    }
+    }*/
     public Result deleteStepFromRecipe(Http.Request request,Long id, Long recipeId){
         Step paso = Step.findByIdFromRecipe(id,recipeId);
         if(paso == null){

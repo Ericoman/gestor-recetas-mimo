@@ -1,11 +1,15 @@
 package models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.ebean.Finder;
 import io.ebean.annotation.NotNull;
 import play.data.validation.Constraints;
+import views.IngredientRefSerializer;
+import views.RecipeRefSerializer;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -18,6 +22,7 @@ public class Ingredient extends BaseModel {
     private String category; //posible enum
     private String properties;
     @JsonIgnoreProperties(value="ingredients")
+    @JsonSerialize(using = RecipeRefSerializer.class)
     @ManyToMany(mappedBy = "ingredients")
     private Set<Recipe> recipes;
 
@@ -85,6 +90,26 @@ public class Ingredient extends BaseModel {
     }
     public static List<Ingredient> findAll(){
         return find.all();
+    }
+    public static List<Ingredient> findAllFromRecipe(Recipe recipe){
+        List<Long> ingredientsIds = new ArrayList<>();
+        for(Ingredient i : recipe.getIngredients()){
+            ingredientsIds.add(i.getId());
+        }
+        if(ingredientsIds.isEmpty()){
+            return recipe.getIngredients();
+        }
+        return find.query().where().idIn(ingredientsIds).findList();
+    }
+    public static List<Ingredient> findAllFromRecipeByName(Recipe recipe){
+        List<String> ingredientsNames = new ArrayList<>();
+        for(Ingredient i : recipe.getIngredients()){
+            ingredientsNames.add(i.getName());
+        }
+        if(ingredientsNames.isEmpty()){
+            return recipe.getIngredients();
+        }
+        return find.query().where().in("name",ingredientsNames).findList();
     }
     public static Ingredient findByName(String name){
         return find.query().where().eq("name",name).findOne();
