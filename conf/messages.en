@@ -1,0 +1,8 @@
+unsuportedMediaType.Accept= Media types "{0} are not supported.\nSupported media types are "application/xml" and "application/json".
+unsuportedMediaType.ContentType = Media types "{0}" are not supported.\nSupported media types are "application/x-www-form-urlencoded" and "application/json".
+validation.error.min = Value must be greater than or equal to {0}
+validation.error.max = Value must be lesser than or equal to {0}
+validation.error.required = This field is required
+validation.error.digits = Invalid value
+validation.error.unique.name = Field "name" must be unique
+validation.error.unique.title = Field "title" must be unique

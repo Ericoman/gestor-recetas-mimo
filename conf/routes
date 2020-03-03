@@ -23,6 +23,7 @@ DELETE  /recipe/:id              controllers.RecipeController.deleteRecipe(reque
 #Ingredients
 #Ingredients collection
 GET     /ingredients             controllers.IngredientController.getIngredientCollection(request:Request)
+GET     /recipe/:recipeId/ingredients             controllers.IngredientController.getIngredientCollectionFromRecipe(request:Request, recipeId:Long)
 POST    /ingredients             controllers.IngredientController.createIngredient(request:Request)
 
 #Ingredient resource
@@ -71,6 +72,7 @@ DELETE  /recipe/:recipeId/step/:id          controllers.StepController.deleteSte
 #Categories
 #Category collection
 GET     /categories             controllers.CategoryController.getCategoryCollection(request:Request)
+GET     /recipe/:recipeId/categories             controllers.CategoryController.getCategoryCollectionFromRecipe(request:Request, recipeId:Long)
 POST    /categories             controllers.CategoryController.createCategory(request:Request)
 
 #Category resource

@@ -7,6 +7,7 @@ create table category (
   id                            bigserial not null,
   name                          varchar(255),
   popularity                    float,
+  constraint uq_category_name unique (name),
   constraint pk_category primary key (id)
 );
 
@@ -41,6 +42,7 @@ create table recipe (
   time                          float not null,
   calification                  float,
   id_nutrition                  bigint,
+  constraint uq_recipe_title unique (title),
   constraint uq_recipe_id_nutrition unique (id_nutrition),
   constraint pk_recipe primary key (id)
 );
@@ -64,7 +66,6 @@ create table step (
   description                   varchar(255),
   time                          float,
   recipe_id                     bigint,
-  constraint uq_step_number unique (number),
   constraint pk_step primary key (id)
 );
 
