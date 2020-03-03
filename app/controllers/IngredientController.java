@@ -2,12 +2,18 @@ package controllers;
 
 import akka.http.javadsl.model.HttpRequest;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.org.apache.regexp.internal.RECompiler;
+import jdk.nashorn.internal.ir.ObjectNode;
 import models.Ingredient;
+import models.Nutrition;
 import models.Recipe;
+import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import play.api.i18n.MessagesApi;
+import play.api.mvc.RequestHeader;
 import play.data.Form;
 import play.data.FormFactory;
+import play.data.validation.ValidationError;
 import play.db.ebean.Transactional;
 import play.mvc.*;
 import views.xml.ingredient;
@@ -15,10 +21,8 @@ import play.libs.Json;
 import views.xml.ingredientCollection;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import javax.validation.*;
+import java.util.*;
 
 
 public class IngredientController extends Controller {
@@ -46,10 +50,15 @@ public class IngredientController extends Controller {
     public Result createIngredient(Http.Request request){
         Ingredient ingrediente;
         List<Recipe> recipeList;
+        Map<String,String> errors;
         switch (request.contentType().get()){
             case "application/json":
                 JsonNode jsonBody = request.body().asJson();
                 ingrediente = Json.fromJson(jsonBody, Ingredient.class);
+                errors = ingrediente.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 recipeList = Recipe.findAllFromIngredientByTitle(ingrediente);
                 ingrediente.clearRecipes();
                 ingrediente.save();
@@ -110,10 +119,12 @@ public class IngredientController extends Controller {
             return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
+    @Transactional
     public Result updateIngredientTotally(Http.Request request, Long id){
         Ingredient ingrediente = Ingredient.findById(id);
         Ingredient ingredienteRecibido;
         List<Recipe> recipeList;
+        Map<String,String> errors;
         if (ingrediente == null){
             return Results.notFound();
         }
@@ -122,27 +133,35 @@ public class IngredientController extends Controller {
                 JsonNode jsonBody = request.body().asJson();
                 ingredienteRecibido = Json.fromJson(jsonBody, Ingredient.class);
                 ingrediente.setAll(ingredienteRecibido);
+                errors = ingrediente.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 recipeList = Recipe.findAllFromIngredientByTitle(ingrediente);
-                ingrediente.clearRecipes();
+                ingrediente.setRecipes(recipeList);
+                /*ingrediente.clearRecipes();
                 for(Recipe r: recipeList){
                     r.addIngredient(ingrediente);
                     r.update();
-                }
+                }*/
                 ingrediente.update();
                 break;
             case "application/x-www-form-urlencoded":
                 Form<Ingredient> form =  formFactory.form(Ingredient.class).bindFromRequest(request);
-                if (form.hasErrors()){
-                    return Results.badRequest(form.errorsAsJson());
-                }
+                form = form.discardingErrors();
                 ingredienteRecibido = form.get();
                 ingrediente.setAll(ingredienteRecibido);
+                errors = ingrediente.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 recipeList = Recipe.findAllFromIngredientByTitle(ingrediente);
-                ingrediente.clearRecipes();
+                ingrediente.setRecipes(recipeList);
+                /*ingrediente.clearRecipes();
                 for(Recipe r: recipeList){
                     r.addIngredient(ingrediente);
                     r.update();
-                }
+                }*/
                 ingrediente.update();
                 break;
             default:
@@ -161,6 +180,7 @@ public class IngredientController extends Controller {
         //Ingredient ingrediente = this.ingredients.get(id.intValue());
         Ingredient ingrediente = Ingredient.findById(id);
         List<Recipe> recipeList;
+        Map<String,String> errors;
         if (ingrediente == null){
             return Results.notFound();
         }
@@ -176,26 +196,33 @@ public class IngredientController extends Controller {
                 if(jsonBody.has("properties")){
                     ingrediente.setProperties(jsonBody.get("properties").asText());
                 }
+                errors = ingrediente.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 if(jsonBody.has("recipes")){
-                    ingrediente.clearRecipes();
+                    List<Recipe> recipes = new ArrayList<>();
                     Iterator<JsonNode> iterator = jsonBody.get("recipes").elements();
                     while (iterator.hasNext()){
                         Recipe recipe = Json.fromJson(iterator.next(),Recipe.class);
                         recipe = Recipe.findByTitle(recipe.getTitle());
-                        if(recipe != null) {
+                        if(recipe != null){
+                            recipes.add(recipe);
+                        }
+                        /*if(recipe != null) {
                             recipe.addIngredient(ingrediente);
                             recipe.update();
-                        }
+                        }*/
                     }
+                    ingrediente.setRecipes(recipes);
                 }
+
                 ingrediente.update();
                 break;
             case "application/x-www-form-urlencoded":
                 Form<Ingredient> form =  formFactory.form(Ingredient.class).bindFromRequest(request);
                 Ingredient ingredienteFormulario;
-                if (form.hasErrors()){
-                    return Results.badRequest(form.errorsAsJson());
-                }
+                form = form.discardingErrors();
                 ingredienteFormulario = form.get();
                 if (ingredienteFormulario.getName() != null){
                     ingrediente.setName(ingredienteFormulario.getName());
@@ -206,13 +233,19 @@ public class IngredientController extends Controller {
                 if (ingredienteFormulario.getProperties() != null){
                     ingrediente.setProperties(ingredienteFormulario.getProperties());
                 }
+                errors = ingrediente.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 if (ingredienteFormulario.getRecipes() != null){
                     recipeList = Recipe.findAllFromIngredientByTitle(ingrediente);
-                    ingrediente.clearRecipes();
+                    ingrediente.setRecipes(recipeList);
+                    /*ingrediente.clearRecipes();
                     for(Recipe r: recipeList){
                         r.addIngredient(ingrediente);
                         r.update();
-                    }                }
+                    }*/
+                }
                 ingrediente.update();
                 break;
             default:

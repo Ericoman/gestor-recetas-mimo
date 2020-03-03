@@ -6,19 +6,23 @@ import models.Step;
 import play.api.i18n.MessagesApi;
 import play.data.Form;
 import play.data.FormFactory;
+import play.data.validation.ValidationError;
 import play.db.ebean.Transactional;
 import play.libs.Json;
+import play.libs.typedmap.TypedMap;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
 
+import sun.swing.MenuItemLayoutHelper;
 import views.xml.step;
 import views.xml.stepCollection;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class StepController extends Controller {
     FormFactory formFactory;
@@ -85,6 +89,7 @@ public class StepController extends Controller {
     public Result createStepInRecipe(Http.Request request, Long recipeId){
         Step paso;
         Recipe selectedRecipe = Recipe.findById(recipeId);
+        Map<String,String> errors;
         if(selectedRecipe==null){
             return Results.notFound();
         }
@@ -92,6 +97,10 @@ public class StepController extends Controller {
             case "application/json":
                 JsonNode jsonBody = request.body().asJson();
                 paso = Json.fromJson(jsonBody, Step.class);
+                errors = paso.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 selectedRecipe.addStep(paso);
                 selectedRecipe.save();
                 //paso.save();
@@ -177,6 +186,7 @@ public class StepController extends Controller {
 
     public Result updateStepTotallyFromRecipe(Http.Request request, Long id, Long recipeId){
         Step paso = Step.findByIdFromRecipe(id,recipeId);
+        Map<String,String> errors;
         if(paso == null){
             return Results.notFound();
         }
@@ -187,6 +197,10 @@ public class StepController extends Controller {
                 JsonNode jsonBody = request.body().asJson();
                 pasoRecibido = Json.fromJson(jsonBody, Step.class);
                 paso.setAll(pasoRecibido);
+                errors = paso.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 paso.update();
                 break;
             case "application/x-www-form-urlencoded":
@@ -265,6 +279,7 @@ public class StepController extends Controller {
     }*/
     public Result updateStepFromRecipe(Http.Request request,Long id, Long recipeId){
         Step paso = Step.findByIdFromRecipe(id,recipeId);
+        Map<String,String> errors;
         if(paso == null){
             return Results.notFound();
         }
@@ -284,14 +299,16 @@ public class StepController extends Controller {
                 if(jsonBody.has("number")){
                     paso.setNumber(jsonBody.get("number").asLong());
                 }
+                errors = paso.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 paso.update();
                 break;
-            case "application/x-wwww-form-urlencoded":
+            case "application/x-www-form-urlencoded":
                 Form<Step> form =  formFactory.form(Step.class).bindFromRequest(request);
                 Step pasoFormulario;
-                if (form.hasErrors()){
-                    return Results.badRequest(form.errorsAsJson());
-                }
+                form = form.discardingErrors();
                 pasoFormulario = form.get();
                 if (pasoFormulario.getTitle() != null){
                     paso.setTitle(pasoFormulario.getTitle());
@@ -304,6 +321,10 @@ public class StepController extends Controller {
                 }
                 if (pasoFormulario.getNumber() != null){
                     paso.setNumber(pasoFormulario.getNumber());
+                }
+                errors = paso.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
                 }
                 paso.update();
                 break;

@@ -3,6 +3,7 @@ package controllers;
 import com.fasterxml.jackson.databind.JsonNode;
 import models.Nutrition;
 import models.Recipe;
+import models.Step;
 import play.api.i18n.MessagesApi;
 import play.data.Form;
 import play.data.FormFactory;
@@ -17,6 +18,7 @@ import views.xml.*;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class NutritionController extends Controller {
     FormFactory formFactory;
@@ -86,6 +88,7 @@ public class NutritionController extends Controller {
     public Result createNutritionInRecipe(Http.Request request, Long recipeId){
         Nutrition nutricion;
         Recipe selectedRecipe = Recipe.findById(recipeId);
+        Map<String,String> errors;
         if(selectedRecipe.getNutrition() != null){
             return Results.notFound();
         }
@@ -94,6 +97,10 @@ public class NutritionController extends Controller {
             case "application/json":
                 JsonNode jsonBody = request.body().asJson();
                 nutricion = Json.fromJson(jsonBody, Nutrition.class);
+                errors = nutricion.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 selectedRecipe.setNutrition(nutricion);
                 selectedRecipe.save();
                 //nutricion.save(); con la cascada de SAVE no es necesario ya que se hace automáticamente
@@ -165,6 +172,7 @@ public class NutritionController extends Controller {
         Nutrition nutricion;
         Nutrition nutricionRecibida;
         Recipe selectedRecipe = Recipe.findById(recipeId);
+        Map<String,String> errors;
         if (selectedRecipe == null){
             return Results.notFound();
         }
@@ -177,15 +185,21 @@ public class NutritionController extends Controller {
                 JsonNode jsonBody = request.body().asJson();
                 nutricionRecibida = Json.fromJson(jsonBody, Nutrition.class);
                 nutricion.setAll(nutricionRecibida);
+                errors = nutricion.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 nutricion.update();
                 break;
             case "application/x-www-form-urlencoded":
                 Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
-                if (form.hasErrors()){
-                    return Results.badRequest(form.errorsAsJson());
-                }
+                form = form.discardingErrors();
                 nutricionRecibida = form.get();
                 nutricion.setAll(nutricionRecibida);
+                errors = nutricion.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 nutricion.update();
                 break;
             default:
@@ -285,6 +299,7 @@ public class NutritionController extends Controller {
     public Result updateNutritionFromRecipe(Http.Request request,Long recipeId){
         Nutrition nutricion;
         Recipe selectedRecipe = Recipe.findById(recipeId);
+        Map<String,String> errors;
         if(selectedRecipe == null){
             return Results.notFound();
         }
@@ -323,14 +338,20 @@ public class NutritionController extends Controller {
                 if(jsonBody.has("protein")){
                     nutricion.setProtein( jsonBody.get("protein").asDouble());
                 }
+                Form<Nutrition> validationForm = formFactory.form(Nutrition.class).bind(messagesApi.preferred(request).lang().asJava(),request.attrs(),Json.toJson(nutricion));
+                if(validationForm.hasErrors()){
+                    return Results.badRequest(validationForm.errorsAsJson());
+                }
+                errors = nutricion.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 nutricion.update();
                 break;
             case "application/x-www-form-urlencoded":
                 Form<Nutrition> form =  formFactory.form(Nutrition.class).bindFromRequest(request);
                 Nutrition nutricionFormulario;
-                if (form.hasErrors()){
-                    return Results.badRequest(form.errorsAsJson());
-                }
+                form = form.discardingErrors();
                 nutricionFormulario = form.get();
                 if (nutricionFormulario.getPortionSize() != null){
                     nutricion.setPortionSize(nutricionFormulario.getPortionSize());
@@ -358,6 +379,10 @@ public class NutritionController extends Controller {
                 }
                 if (nutricionFormulario.getProtein() != null){
                     nutricion.setProtein(nutricionFormulario.getProtein());
+                }
+                errors = nutricion.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
                 }
                 nutricion.update();
                 break;

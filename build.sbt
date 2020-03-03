@@ -19,5 +19,8 @@ libraryDependencies ++= Seq(
 // To provide an implementation of JAXB-API, which is required by Ebean.
   "javax.xml.bind" % "jaxb-api" % "2.3.1",
   "javax.activation" % "activation" % "1.1.1",
+  "javax.el" % "javax.el-api" % "3.0.1-b06",
+  "javax.el" % "el-api" % "2.2.1-b04",
+
 )
 //libraryDependencies += "mysql" % "mysql-connector-java" % "8.0.18"

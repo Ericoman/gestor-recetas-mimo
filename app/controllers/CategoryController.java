@@ -2,6 +2,7 @@ package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import models.Category;
+import models.Ingredient;
 import models.Recipe;
 import play.api.i18n.MessagesApi;
 import play.data.Form;
@@ -12,6 +13,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
+import scala.collection.StrictOptimizedClassTagSeqFactory;
 import views.xml.category;
 import views.xml.categoryCollection;
 
@@ -19,6 +21,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 
 public class CategoryController extends Controller {
@@ -46,10 +49,15 @@ public class CategoryController extends Controller {
     public Result createCategory(Http.Request request){
         Category categoria;
         List<Recipe> recipeList;
+        Map<String, String> errors;
         switch (request.contentType().get()){
             case "application/json":
                 JsonNode jsonBody = request.body().asJson();
                 categoria = Json.fromJson(jsonBody, Category.class);
+                errors = categoria.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 recipeList = Recipe.findAllFromCategoryByTitle(categoria);
                 categoria.clearRecipes();
                 categoria.save();
@@ -116,6 +124,7 @@ public class CategoryController extends Controller {
         Category categoria = Category.findById(id);
         Category categoriaRecibida;
         List<Recipe> recipeList;
+        Map<String,String> errors;
         if(categoria == null){
             return Results.notFound();
         }
@@ -124,27 +133,35 @@ public class CategoryController extends Controller {
                 JsonNode jsonBody = request.body().asJson();
                 categoriaRecibida = Json.fromJson(jsonBody, Category.class);
                 categoria.setAll(categoriaRecibida);
+                errors = categoria.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 recipeList = Recipe.findAllFromCategoryByTitle(categoria);
-                categoria.clearRecipes();
+                categoria.setRecipes(recipeList);
+                /*categoria.clearRecipes();
                 for(Recipe r: recipeList){
                     r.addCategory(categoria);
                     r.update();
-                }
+                }*/
                 categoria.update();
                 break;
             case "application/x-www-form-urlencoded":
                 Form<Category> form =  formFactory.form(Category.class).bindFromRequest(request);
-                if (form.hasErrors()){
-                    return Results.badRequest(form.errorsAsJson());
-                }
+                form = form.discardingErrors();
                 categoriaRecibida = form.get();
                 categoria.setAll(categoriaRecibida);
+                errors = categoria.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 recipeList = Recipe.findAllFromCategoryByTitle(categoria);
-                categoria.clearRecipes();
+                categoria.setRecipes(recipeList);
+                /*categoria.clearRecipes();
                 for(Recipe r: recipeList){
                     r.addCategory(categoria);
                     r.update();
-                }
+                }*/
                 categoria.update();
 
                 break;
@@ -163,6 +180,7 @@ public class CategoryController extends Controller {
     public Result updateCategory(Http.Request request,Long id){
         Category categoria = Category.findById(id);
         List<Recipe> recipeList;
+        Map<String,String> errors;
         if(categoria == null){
             return Results.notFound();
         }
@@ -175,26 +193,33 @@ public class CategoryController extends Controller {
                 if(jsonBody.has("popularity")){
                     categoria.setPopularity(jsonBody.get("popularity").asDouble());
                 }
+                errors = categoria.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 if(jsonBody.has("recipes")){
                     categoria.clearRecipes();
                     Iterator<JsonNode> iterator = jsonBody.get("recipes").elements();
+                    List<Recipe> recipes = new ArrayList<>();
                     while (iterator.hasNext()){
                         Recipe recipe = Json.fromJson(iterator.next(),Recipe.class);
                         recipe = Recipe.findByTitle(recipe.getTitle());
-                        if(recipe != null) {
+                        if(recipe!= null){
+                            recipes.add(recipe);
+                        }
+                        /*if(recipe != null) {
                             recipe.addCategory(categoria);
                             recipe.update();
-                        }
+                        }*/
                     }
+                    categoria.setRecipes(recipes);
                 }
                 categoria.update();
                 break;
             case "application/x-www-form-urlencoded":
                 Form<Category> form =  formFactory.form(Category.class).bindFromRequest(request);
                 Category categoriaFormulario;
-                if (form.hasErrors()){
-                    return Results.badRequest(form.errorsAsJson());
-                }
+                form = form.discardingErrors();
                 categoriaFormulario = form.get();
                 if (categoriaFormulario.getName() != null){
                     categoria.setName(categoriaFormulario.getName());
@@ -205,12 +230,17 @@ public class CategoryController extends Controller {
                 if(categoriaFormulario.getRecipes() != null){
                     categoria.setRecipes(categoriaFormulario.getRecipes());
                 }
+                errors = categoria.forceValidate(messagesApi,request);
+                if(!errors.isEmpty()){
+                    return Results.badRequest(Json.toJson(errors));
+                }
                 recipeList = Recipe.findAllFromCategoryByTitle(categoria);
-                categoria.clearRecipes();
+                categoria.setRecipes(recipeList);
+                /*categoria.clearRecipes();
                 for(Recipe r: recipeList){
                     r.addCategory(categoria);
                     r.update();
-                }
+                }*/
                 categoria.update();
                 break;
             default:

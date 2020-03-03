@@ -5,27 +5,40 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.ebean.Finder;
 import io.ebean.annotation.NotNull;
+import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
+import play.api.i18n.MessagesApi;
 import play.data.validation.Constraints;
+import play.mvc.Http;
 import views.IngredientRefSerializer;
 import views.SingleRecipeRefSerializer;
 
 import javax.persistence.*;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+import javax.validation.constraints.Digits;
 import javax.validation.constraints.Min;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Entity
 public class Step extends BaseModel {
-    @Constraints.Required
+    @Constraints.Required(message = "validation.error.required")
     @NotNull
-    @Constraints.Min(1)
-    @Min(1)
+    @Constraints.Min(value = 1,message = "validation.error.min")
+    @Min(value = 1,message = "validation.error.min")
+    @Digits(integer = 10,fraction = 0, message = "validation.error.digits")
     private Long number;
-    @Constraints.Required
+    @Constraints.Required(message = "validation.error.required")
     @NotNull
     private String title;
     private String description;
-    @Constraints.Min(0)
-    @Min(0)
+    @Constraints.Min(value = 0,message = "validation.error.min")
+    @Min(value = 0,message = "validation.error.min")
+    @Digits(integer = 10,fraction = 3,message = "validation.error.digits")
     private Double time;
     @JsonIgnoreProperties(value="steps")
     @JsonSerialize(using = SingleRecipeRefSerializer.class)
@@ -110,5 +123,17 @@ public class Step extends BaseModel {
     }
     public static Step findByTitle(String title){
         return find.query().where().eq("title",title).findOne();
+    }
+
+    public Map<String,String> forceValidate(MessagesApi messagesApi, Http.RequestHeader request) {
+        ValidatorFactory factory = Validation.byDefaultProvider().configure().messageInterpolator(new ParameterMessageInterpolator()).buildValidatorFactory();
+        Validator validator = factory.getValidator();
+        Set<ConstraintViolation<Step>> violations =
+                validator.validate(this);
+        Map<String,String> errors = new HashMap<String,String>();
+        for (ConstraintViolation<Step> cv : violations) {
+            errors.put(cv.getPropertyPath().toString(), messagesApi.preferred(request).asJava().apply(cv.getMessage()));
+        }
+        return errors;
     }
 }

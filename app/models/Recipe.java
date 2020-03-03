@@ -6,39 +6,44 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.ebean.Finder;
 import io.ebean.annotation.NotNull;
 import org.checkerframework.checker.units.qual.A;
+import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
+import play.api.i18n.MessagesApi;
 import play.data.validation.Constraints;
+import play.mvc.Http;
+import validators.RecipeUniqueTitle;
 import views.CategoryRefSerializer;
 import views.IngredientRefSerializer;
 import views.SingleNutritionRefSerializer;
 import views.StepRefSerializer;
 
 import javax.persistence.*;
-import javax.validation.Constraint;
+import javax.validation.*;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Entity
+@RecipeUniqueTitle
 public class Recipe extends BaseModel {
-    @Constraints.Required
+    @Constraints.Required(message = "validation.error.required")
     @NotNull
-    private String title; //No nulo
+    @Column(unique = true)
+    private String title;
     @JsonIgnoreProperties(value="recipes")
     @JsonSerialize(using = CategoryRefSerializer.class)
     @ManyToMany(cascade = CascadeType.REMOVE)
     private List<Category> categories;// Many to Many
     private String source;
     private Integer portions;
-    @Constraints.Required
+    @Constraints.Required(message = "validation.error.required")
     @NotNull
-    @Constraints.Min(0)
-    @Min(0)
-    private Double time; // No nulo
-    @Constraints.Min(0)
-    @Min(0)
-    @Constraints.Max(5)
-    @Max(5)
+    @Constraints.Min(value = 0,message = "validation.error.min")
+    @Min(value = 0,message = "validation.error.min" )
+    private Double time;
+    @Constraints.Min(value = 0,message = "validation.error.min")
+    @Min(value = 0, message = "validation.error.min")
+    @Constraints.Max(value = 5,message = "validation.error.max")
+    @Max(value = 5, message = "validation.error.max")
     private Double calification;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @JsonIgnoreProperties(value="recipe")
@@ -279,5 +284,16 @@ public class Recipe extends BaseModel {
     }
     public static Recipe findByTitle(String title){
         return find.query().where().eq("title",title).findOne();
+    }
+    public Map<String,String> forceValidate(MessagesApi messagesApi, Http.RequestHeader request) {
+        ValidatorFactory factory = Validation.byDefaultProvider().configure().messageInterpolator(new ParameterMessageInterpolator()).buildValidatorFactory();
+        Validator validator = factory.getValidator();
+        Set<ConstraintViolation<Recipe>> violations =
+                validator.validate(this);
+        Map<String,String> errors = new HashMap<String,String>();
+        for (ConstraintViolation<Recipe> cv : violations) {
+            errors.put(cv.getPropertyPath().toString(), messagesApi.preferred(request).asJava().apply(cv.getMessage()));
+        }
+        return errors;
     }
 }
