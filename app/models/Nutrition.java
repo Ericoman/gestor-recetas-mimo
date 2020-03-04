@@ -1,6 +1,5 @@
 package models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.ebean.Finder;
@@ -9,10 +8,10 @@ import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator
 import play.api.i18n.MessagesApi;
 import play.data.validation.Constraints;
 import play.mvc.Http;
-import views.SingleNutritionRefSerializer;
 import views.SingleRecipeRefSerializer;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.OneToOne;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
@@ -27,12 +26,12 @@ import java.util.Set;
 public class Nutrition extends BaseModel {
     @Constraints.Required(message = "validation.error.required")
     @NotNull
-    private String portionSize; //no nulo
+    private String portionSize;
     @Constraints.Required(message = "validation.error.required")
     @NotNull
     @Constraints.Min(value = 0,message = "validation.error.min")
     @Min(value = 0,message = "validation.error.min")
-    private Double calories; // no nulo
+    private Double calories;
     @Constraints.Min(value = 0, message = "validation.error.min")
     @Min(value = 0,message = "validation.error.min")
     private Double totalFat;

@@ -1,22 +1,18 @@
 package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
 import models.Category;
 import models.Ingredient;
 import models.Recipe;
-
 import play.api.i18n.MessagesApi;
 import play.data.Form;
 import play.data.FormFactory;
 import play.db.ebean.Transactional;
 import play.libs.Json;
 import play.mvc.Controller;
-import play.mvc.Result;
 import play.mvc.Http;
-
-import  play.mvc.Results;
-
+import play.mvc.Result;
+import play.mvc.Results;
 import views.xml.recipe;
 import views.xml.recipeCollection;
 
@@ -197,10 +193,7 @@ public class RecipeController extends Controller {
                         if(category != null) {
                             categories.add(category);
                         }
-                        /*if(category != null) {
-                            receta.addCategory(category);
-                            category.update();
-                        }*/
+
                     }
                     receta.setCategories(categories);
                 }
@@ -214,10 +207,7 @@ public class RecipeController extends Controller {
                         if(ingredient != null) {
                             ingredients.add(ingredient);
                         }
-                        /*if(ingredient != null) {
-                            receta.addIngredient(ingredient);
-                            ingredient.update();
-                        }*/
+
                     }
                     receta.setIngredients(ingredients);
                 }
@@ -250,20 +240,12 @@ public class RecipeController extends Controller {
                 if (recetaFormulario.getCategories() != null){
                     categoryList = Category.findAllFromRecipeByName(receta);
                     receta.setCategories(categoryList);
-                    /*receta.clearCategories();
-                    for(Category c: categoryList){
-                        receta.addCategory(c);
-                        c.update();
-                    }*/
+
                 }
                 if (recetaFormulario.getIngredients() != null){
                     ingredientList = Ingredient.findAllFromRecipeByName(receta);
                     receta.setIngredients(ingredientList);
-                    /*receta.clearIngredients();
-                    for(Ingredient i: ingredientList){
-                        receta.addIngredient(i);
-                        i.update();
-                    }*/
+
                 }
                 receta.update();
                 break;

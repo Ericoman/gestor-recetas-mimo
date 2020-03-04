@@ -136,11 +136,6 @@ public class CategoryController extends Controller {
                 }
                 recipeList = Recipe.findAllFromCategoryByTitle(categoria);
                 categoria.setRecipes(recipeList);
-                /*categoria.clearRecipes();
-                for(Recipe r: recipeList){
-                    r.addCategory(categoria);
-                    r.update();
-                }*/
                 categoria.update();
                 break;
             case "application/x-www-form-urlencoded":
@@ -154,11 +149,6 @@ public class CategoryController extends Controller {
                 }
                 recipeList = Recipe.findAllFromCategoryByTitle(categoria);
                 categoria.setRecipes(recipeList);
-                /*categoria.clearRecipes();
-                for(Recipe r: recipeList){
-                    r.addCategory(categoria);
-                    r.update();
-                }*/
                 categoria.update();
 
                 break;
@@ -204,10 +194,6 @@ public class CategoryController extends Controller {
                         if(recipe!= null){
                             recipes.add(recipe);
                         }
-                        /*if(recipe != null) {
-                            recipe.addCategory(categoria);
-                            recipe.update();
-                        }*/
                     }
                     categoria.setRecipes(recipes);
                 }
@@ -233,11 +219,6 @@ public class CategoryController extends Controller {
                 }
                 recipeList = Recipe.findAllFromCategoryByTitle(categoria);
                 categoria.setRecipes(recipeList);
-                /*categoria.clearRecipes();
-                for(Recipe r: recipeList){
-                    r.addCategory(categoria);
-                    r.update();
-                }*/
                 categoria.update();
                 break;
             default:

@@ -5,7 +5,6 @@ import play.data.validation.Constraints;
 import play.libs.F;
 
 import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 
 public class IngredientUniqueNameValidator extends Constraints.Validator<Ingredient> implements ConstraintValidator<IngredientUniqueName,Ingredient> {
     @Override

@@ -1,6 +1,5 @@
 package validators;
 
-import models.Ingredient;
 import models.Recipe;
 import play.data.validation.Constraints;
 import play.libs.F;

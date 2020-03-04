@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import environment.AddressesInterface;
 import models.Nutrition;
-import models.Recipe;
 
 import java.io.IOException;
 

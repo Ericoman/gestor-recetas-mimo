@@ -6,16 +6,12 @@ import models.Step;
 import play.api.i18n.MessagesApi;
 import play.data.Form;
 import play.data.FormFactory;
-import play.data.validation.ValidationError;
 import play.db.ebean.Transactional;
 import play.libs.Json;
-import play.libs.typedmap.TypedMap;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
-
-import sun.swing.MenuItemLayoutHelper;
 import views.xml.step;
 import views.xml.stepCollection;
 
@@ -58,33 +54,7 @@ public class StepController extends Controller {
             return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
-    /*public Result createStep(Http.Request request){
-        Step paso;
-        switch (request.contentType().get()){
-            case "application/json":
-                JsonNode jsonBody = request.body().asJson();
-                paso = Json.fromJson(jsonBody, Step.class);
-                paso.save();
-                break;
-            case "application/x-www-form-urlencoded":
-                Form<Step> form =  formFactory.form(Step.class).bindFromRequest(request);
-                if (form.hasErrors()){
-                    return Results.badRequest(form.errorsAsJson());
-                }
-                paso = form.get();
-                paso.save();
-                break;
-            default:
-                return Results.status(415);
-        }
-        if (request.accepts("application/xml")){
-            return Results.created(step.render(paso,Boolean.FALSE));
-        } else if (request.accepts("application/json")){
-            return Results.created(Json.toJson(paso));
-        }else{
-            return Results.created();
-        }
-    }*/
+
     @Transactional
     public Result createStepInRecipe(Http.Request request, Long recipeId){
         Step paso;
@@ -151,39 +121,8 @@ public class StepController extends Controller {
             return Results.status(415,messagesApi.preferred(request).asJava().apply("unsuportedMediaType.Accept", request.acceptedTypes()));
         }
     }
-    /*public Result updateStepTotally(Http.Request request, Long id){
-        Step paso = Step.findById(id);
-        if(paso == null){
-            return Results.notFound();
-        }
-        Step pasoRecibido;
 
-        switch (request.contentType().get()){
-            case "application/json":
-                JsonNode jsonBody = request.body().asJson();
-                pasoRecibido = Json.fromJson(jsonBody, Step.class);
-                paso.setAll(pasoRecibido);
-                paso.update();
-                break;
-            default:
-                Form<Step> form =  formFactory.form(Step.class).bindFromRequest(request);
-                if (form.hasErrors()){
-                    return Results.badRequest(form.errorsAsJson());
-                }
-                pasoRecibido = form.get();
-                paso.setAll(pasoRecibido);
-                paso.update();
-                break;
-        }
-        if (request.accepts("application/xml")){
-            return Results.created(step.render(paso,Boolean.FALSE));
-        } else if (request.accepts("application/json")){
-            return Results.created(Json.toJson(paso));
-        }else{
-            return Results.created();
-        }
-    }*/
-
+    @Transactional
     public Result updateStepTotallyFromRecipe(Http.Request request, Long id, Long recipeId){
         Step paso = Step.findByIdFromRecipe(id,recipeId);
         Map<String,String> errors;
@@ -223,60 +162,7 @@ public class StepController extends Controller {
             return Results.created();
         }
     }
-    /*public Result updateStep(Http.Request request,Long id){
-        Step paso = Step.findById(id);
-        if(paso == null){
-            return Results.notFound();
-        }
-
-        switch (request.contentType().get()){
-            case "application/json":
-                JsonNode jsonBody = request.body().asJson();
-                if(jsonBody.has("title")){
-                    paso.setTitle(jsonBody.get("title").asText());
-                }
-                if(jsonBody.has("description")){
-                    paso.setDescription(jsonBody.get("description").asText());
-                }
-                if(jsonBody.has("time")){
-                    paso.setTime(jsonBody.get("time").asDouble());
-                }
-                if(jsonBody.has("number")){
-                    paso.setNumber(jsonBody.get("number").asLong());
-                }
-                paso.update();
-                break;
-            default:
-                Form<Step> form =  formFactory.form(Step.class).bindFromRequest(request);
-                Step pasoFormulario;
-                if (form.hasErrors()){
-                    return Results.badRequest(form.errorsAsJson());
-                }
-                pasoFormulario = form.get();
-                if (pasoFormulario.getTitle() != null){
-                    paso.setTitle(pasoFormulario.getTitle());
-                }
-                if (pasoFormulario.getDescription() != null){
-                    paso.setDescription(pasoFormulario.getDescription());
-                }
-                if (pasoFormulario.getTime() != null){
-                    paso.setTime(pasoFormulario.getTime());
-                }
-                if (pasoFormulario.getNumber() != null){
-                    paso.setNumber(pasoFormulario.getNumber());
-                }
-                paso.update();
-                break;
-        }
-        //paso.update();
-        if (request.accepts("application/xml")){
-            return Results.ok(step.render(paso,Boolean.FALSE));
-        } else if (request.accepts("application/json")){
-            return Results.ok(Json.toJson(paso));
-        }else{
-            return Results.ok();
-        }
-    }*/
+    @Transactional
     public Result updateStepFromRecipe(Http.Request request,Long id, Long recipeId){
         Step paso = Step.findByIdFromRecipe(id,recipeId);
         Map<String,String> errors;
@@ -340,10 +226,7 @@ public class StepController extends Controller {
             return Results.ok();
         }
     }
-    /*public Result deleteStep(Http.Request request,Long id){
-        Step.find.deleteById(id);
-        return Results.noContent();
-    }*/
+    @Transactional
     public Result deleteStepFromRecipe(Http.Request request,Long id, Long recipeId){
         Step paso = Step.findByIdFromRecipe(id,recipeId);
         if(paso == null){

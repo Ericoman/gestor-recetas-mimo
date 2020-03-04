@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import environment.AddressesInterface;
-import models.Category;
 import models.Recipe;
 
 import java.io.IOException;

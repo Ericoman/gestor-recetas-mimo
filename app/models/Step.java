@@ -1,6 +1,5 @@
 package models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.ebean.Finder;
@@ -9,10 +8,10 @@ import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator
 import play.api.i18n.MessagesApi;
 import play.data.validation.Constraints;
 import play.mvc.Http;
-import views.IngredientRefSerializer;
 import views.SingleRecipeRefSerializer;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
@@ -101,7 +100,6 @@ public class Step extends BaseModel {
         this.setDescription(step.getDescription());
         this.setTitle(step.getTitle());
         this.setNumber(step.getNumber());
-        //this.setRecipe(step.getRecipe());
     }
 
     public static final Finder<Long,Step> find = new Finder<>(Step.class);

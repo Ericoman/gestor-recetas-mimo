@@ -1,28 +1,25 @@
 package controllers;
 
-import akka.http.javadsl.model.HttpRequest;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.org.apache.regexp.internal.RECompiler;
-import jdk.nashorn.internal.ir.ObjectNode;
 import models.Ingredient;
-import models.Nutrition;
 import models.Recipe;
-import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import play.api.i18n.MessagesApi;
-import play.api.mvc.RequestHeader;
 import play.data.Form;
 import play.data.FormFactory;
-import play.data.validation.ValidationError;
 import play.db.ebean.Transactional;
-import play.mvc.*;
-import views.xml.ingredient;
 import play.libs.Json;
+import play.mvc.Controller;
+import play.mvc.Http;
+import play.mvc.Result;
+import play.mvc.Results;
+import views.xml.ingredient;
 import views.xml.ingredientCollection;
 
 import javax.inject.Inject;
-import javax.validation.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 
 public class IngredientController extends Controller {
@@ -139,11 +136,6 @@ public class IngredientController extends Controller {
                 }
                 recipeList = Recipe.findAllFromIngredientByTitle(ingrediente);
                 ingrediente.setRecipes(recipeList);
-                /*ingrediente.clearRecipes();
-                for(Recipe r: recipeList){
-                    r.addIngredient(ingrediente);
-                    r.update();
-                }*/
                 ingrediente.update();
                 break;
             case "application/x-www-form-urlencoded":
@@ -157,11 +149,6 @@ public class IngredientController extends Controller {
                 }
                 recipeList = Recipe.findAllFromIngredientByTitle(ingrediente);
                 ingrediente.setRecipes(recipeList);
-                /*ingrediente.clearRecipes();
-                for(Recipe r: recipeList){
-                    r.addIngredient(ingrediente);
-                    r.update();
-                }*/
                 ingrediente.update();
                 break;
             default:
@@ -177,7 +164,6 @@ public class IngredientController extends Controller {
     }
     @Transactional
     public Result updateIngredient(Http.Request request,Long id){
-        //Ingredient ingrediente = this.ingredients.get(id.intValue());
         Ingredient ingrediente = Ingredient.findById(id);
         List<Recipe> recipeList;
         Map<String,String> errors;
@@ -209,10 +195,6 @@ public class IngredientController extends Controller {
                         if(recipe != null){
                             recipes.add(recipe);
                         }
-                        /*if(recipe != null) {
-                            recipe.addIngredient(ingrediente);
-                            recipe.update();
-                        }*/
                     }
                     ingrediente.setRecipes(recipes);
                 }
@@ -240,11 +222,6 @@ public class IngredientController extends Controller {
                 if (ingredienteFormulario.getRecipes() != null){
                     recipeList = Recipe.findAllFromIngredientByTitle(ingrediente);
                     ingrediente.setRecipes(recipeList);
-                    /*ingrediente.clearRecipes();
-                    for(Recipe r: recipeList){
-                        r.addIngredient(ingrediente);
-                        r.update();
-                    }*/
                 }
                 ingrediente.update();
                 break;

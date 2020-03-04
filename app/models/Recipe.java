@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.ebean.Finder;
 import io.ebean.annotation.NotNull;
-import org.checkerframework.checker.units.qual.A;
 import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import play.api.i18n.MessagesApi;
 import play.data.validation.Constraints;
@@ -17,7 +16,10 @@ import views.SingleNutritionRefSerializer;
 import views.StepRefSerializer;
 
 import javax.persistence.*;
-import javax.validation.*;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import java.util.*;
@@ -64,10 +66,9 @@ public class Recipe extends BaseModel {
 
 
 
-    public Recipe(String title, ArrayList <Category> categories,/*String categories,*/ String source, Integer portions, Double time, Double calification, ArrayList<Step> steps/*String steps*/, Nutrition nutrition) {
+    public Recipe(String title, ArrayList <Category> categories, String source, Integer portions, Double time, Double calification, ArrayList<Step> steps, Nutrition nutrition) {
         this.title = title;
         this.categories = categories;
-        //this.categories = categories;
         this.source = source;
         this.portions = portions;
         this.time = time;
@@ -104,16 +105,7 @@ public class Recipe extends BaseModel {
             category.addRecipe(this);
             this.categories.add(category);
         }
-        /*boolean presente = false;
-        for(Ingredient i : this.ingredients){
-            if(i.getId() == ingredient.getId()){
-                presente = true;
-            }
-        }
-        if(!presente) {
-            ingredient.addRecipe(this);
-            this.ingredients.add(ingredient);
-        }*/
+
     }
     public void removeCategory(Category category){
         this.categories.remove(category);
@@ -169,15 +161,7 @@ public class Recipe extends BaseModel {
             this.steps.add(step);
         }
     }
-    /*
-        public String getSteps() {
-            return steps;
-        }
 
-        public void setSteps(String steps) {
-            this.steps = steps;
-        }
-    */
     public Nutrition getNutrition() {
         return nutrition;
     }
@@ -205,16 +189,7 @@ public class Recipe extends BaseModel {
             ingredient.addRecipe(this);
             this.ingredients.add(ingredient);
         }
-        /*boolean presente = false;
-        for(Ingredient i : this.ingredients){
-            if(i.getId() == ingredient.getId()){
-                presente = true;
-            }
-        }
-        if(!presente) {
-            ingredient.addRecipe(this);
-            this.ingredients.add(ingredient);
-        }*/
+
     }
     public void removeIngredient(Ingredient ingredient){
         this.ingredients.remove(ingredient);

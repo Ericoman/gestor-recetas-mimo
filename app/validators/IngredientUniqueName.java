@@ -1,7 +1,5 @@
 package validators;
 
-import models.Ingredient;
-
 import javax.validation.Constraint;
 import javax.validation.Payload;
 import java.lang.annotation.ElementType;

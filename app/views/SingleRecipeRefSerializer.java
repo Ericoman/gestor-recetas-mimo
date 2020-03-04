@@ -8,7 +8,6 @@ import environment.AddressesInterface;
 import models.Recipe;
 
 import java.io.IOException;
-import java.util.List;
 
 public class SingleRecipeRefSerializer extends StdSerializer<Recipe> {
 

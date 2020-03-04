@@ -9,16 +9,15 @@ import play.api.i18n.MessagesApi;
 import play.data.validation.Constraints;
 import play.mvc.Http;
 import validators.IngredientUniqueName;
-import validators.IngredientUniqueNameValidator;
-import views.IngredientRefSerializer;
 import views.RecipeRefSerializer;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.ManyToMany;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
-import javax.validation.constraints.NotEmpty;
 import java.util.*;
 
 @Entity
@@ -27,8 +26,8 @@ public class Ingredient extends BaseModel {
     @Constraints.Required(message = "validation.error.required")
     @NotNull
     @Column(unique = true)
-    private String name; //no nulo
-    private String category; //posible enum
+    private String name;
+    private String category;
     private String properties;
     @JsonIgnoreProperties(value="ingredients")
     @JsonSerialize(using = RecipeRefSerializer.class)
