@@ -2,6 +2,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ingredients>
     @for(i <- ingredientCollection){
-        @ingredient(i)
+        @ingredient(i,Boolean.TRUE)
     }
 </ingredients>

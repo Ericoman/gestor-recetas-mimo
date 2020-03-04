@@ -16,6 +16,7 @@ libraryDependencies ++= Seq(
   //"org.xerial" % "sqlite-jdbc" % "3.30.1",
   "org.postgresql" % "postgresql" % "42.2.9",
   "com.h2database" % "h2" % "1.4.197" % Test,
+  "org.mockito" % "mockito-core" % "3.2.4" % Test,
 // To provide an implementation of JAXB-API, which is required by Ebean.
   "javax.xml.bind" % "jaxb-api" % "2.3.1",
   "javax.activation" % "activation" % "1.1.1",

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import models.Category;
 import models.Ingredient;
 import models.Recipe;
-import models.Step;
+
 import play.api.i18n.MessagesApi;
 import play.data.Form;
 import play.data.FormFactory;
@@ -194,7 +194,9 @@ public class RecipeController extends Controller {
                     while (iterator.hasNext()){
                         Category category = Json.fromJson(iterator.next(),Category.class);
                         category = Category.findByName(category.getName());
-                        categories.add(category);
+                        if(category != null) {
+                            categories.add(category);
+                        }
                         /*if(category != null) {
                             receta.addCategory(category);
                             category.update();

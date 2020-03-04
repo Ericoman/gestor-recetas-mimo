@@ -2,7 +2,6 @@ package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import models.Category;
-import models.Ingredient;
 import models.Recipe;
 import play.api.i18n.MessagesApi;
 import play.data.Form;
@@ -13,7 +12,6 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
-import scala.collection.StrictOptimizedClassTagSeqFactory;
 import views.xml.category;
 import views.xml.categoryCollection;
 
@@ -22,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
 
 public class CategoryController extends Controller {
     FormFactory formFactory;

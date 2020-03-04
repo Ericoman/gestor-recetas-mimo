@@ -2,6 +2,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <steps>
     @for(s <- stepCollection){
-        @step(s)
+        @step(s,Boolean.TRUE)
     }
 </steps>
